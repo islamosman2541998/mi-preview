@@ -56,6 +56,19 @@ return [
         'size' => env('REMOVE_BG_SIZE', 'preview'), // "preview" is free (≤ 0.25 MP) and enough for a logo
     ],
 
+    // Business profile import through Meta Graph API (Facebook Pages + Instagram Business Discovery).
+    'meta' => [
+        'app_id' => env('META_APP_ID'),
+        'app_secret' => env('META_APP_SECRET'),
+        'access_token' => env('META_ACCESS_TOKEN'),
+        'page_id' => env('META_PAGE_ID'),
+        'page_access_token' => env('META_PAGE_ACCESS_TOKEN'),
+        'instagram_account_id' => env('META_INSTAGRAM_ACCOUNT_ID'),
+        'version' => env('META_GRAPH_VERSION', 'v27.0'),
+        'base_url' => env('META_GRAPH_BASE_URL', 'https://graph.facebook.com'),
+        'media_hosts' => array_values(array_filter(array_map('trim', explode(',', env('META_MEDIA_HOSTS', 'fbcdn.net,fbsbx.com,cdninstagram.com'))))),
+    ],
+
     // AI content generation (phase 3). AI_PROVIDER picks the default (claude | gemini);
     // the admin can choose per run among the providers that have a key.
     // Claude via the official Anthropic PHP SDK:

@@ -15,7 +15,6 @@
 <a class="skip-link" href="#main">{{ __('preview.skip') }}</a>
 
 @include('preview.partials.preloader')
-@include('preview.partials.demo-bar')
 @include('templates.industrial.partials.nav')
 
 <main id="main" tabindex="-1">

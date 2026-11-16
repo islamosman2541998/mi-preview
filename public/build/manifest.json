@@ -1,6 +1,10 @@
 {
   "resources/css/templates/bold.css": {
+<<<<<<< Updated upstream
     "file": "assets/bold-iGOHcDTD.css",
+=======
+    "file": "assets/bold-CCfkIrwI.css",
+>>>>>>> Stashed changes
     "name": "bold",
     "names": [
       "bold.css"
@@ -9,7 +13,11 @@
     "isEntry": true
   },
   "resources/css/templates/boutique.css": {
+<<<<<<< Updated upstream
     "file": "assets/boutique-LPkx-CzW.css",
+=======
+    "file": "assets/boutique-DiSBltUL.css",
+>>>>>>> Stashed changes
     "name": "boutique",
     "names": [
       "boutique.css"
@@ -18,7 +26,11 @@
     "isEntry": true
   },
   "resources/css/templates/editorial.css": {
+<<<<<<< Updated upstream
     "file": "assets/editorial-DUeanfp0.css",
+=======
+    "file": "assets/editorial-Bu2MChxj.css",
+>>>>>>> Stashed changes
     "name": "editorial",
     "names": [
       "editorial.css"
@@ -27,7 +39,11 @@
     "isEntry": true
   },
   "resources/css/templates/industrial.css": {
+<<<<<<< Updated upstream
     "file": "assets/industrial-BEPS-OPa.css",
+=======
+    "file": "assets/industrial-BTWT-PiU.css",
+>>>>>>> Stashed changes
     "name": "industrial",
     "names": [
       "industrial.css"
@@ -42,7 +58,11 @@
     "isEntry": true
   },
   "resources/js/preview.js": {
+<<<<<<< Updated upstream
     "file": "assets/preview-qRyIbqiZ.js",
+=======
+    "file": "assets/preview-CRTQROmj.js",
+>>>>>>> Stashed changes
     "name": "preview",
     "src": "resources/js/preview.js",
     "isEntry": true

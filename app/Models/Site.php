@@ -22,7 +22,7 @@ class Site extends Model
 
     protected $fillable = [
         'slug', 'status', 'company_name_ar', 'company_name_en', 'industry_id', 'template',
-        'short_description', 'logo_path', 'logo_nobg_path', 'palette', 'font_key',
+        'short_description', 'source_url', 'source_data', 'logo_path', 'logo_nobg_path', 'palette', 'font_key',
         'phone', 'whatsapp', 'email', 'address_ar', 'address_en', 'map_url', 'socials', 'seo',
         'default_locale', 'preloader_enabled', 'notify_enabled',
         'sent_at', 'first_viewed_at', 'last_viewed_at', 'views_count',
@@ -45,6 +45,7 @@ class Site extends Model
             'palette' => 'array',
             'socials' => 'array',
             'seo' => 'array',
+            'source_data' => 'array',
             'preloader_enabled' => 'boolean',
             'notify_enabled' => 'boolean',
             'sent_at' => 'datetime',

@@ -15,13 +15,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{{ \App\Support\Fonts::stylesheetUrl($site) }}">
-{{-- decided before first paint: preloader once per session, demo bar dismissed for the session --}}
+{{-- Decide before first paint whether the preloader was already shown this session. --}}
 <script>
     (function (d) {
         var s; try { s = window.sessionStorage; } catch (e) {}
         d.classList.add('js');
         if (!s || s.getItem('mi_pl')) d.classList.add('pl-seen');
-        if (s && s.getItem('mi_db')) d.classList.add('db-hidden');
         // safety net: never leave entrance-animated content hidden if preview.js fails
         setTimeout(function () { d.classList.add('is-ready'); }, 3000);
     })(document.documentElement);

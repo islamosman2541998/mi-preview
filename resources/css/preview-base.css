@@ -1,6 +1,6 @@
 /*
  * Shared by every preview template: reset, accessibility helpers, preloader,
- * demo bar, floating WhatsApp button. Templates only consume the --c-* and
+ * floating WhatsApp button. Templates only consume the --c-* and
  * --f-* custom properties set inline on <html>.
  */
 
@@ -65,28 +65,6 @@ main:focus { outline: none; }
 [dir="rtl"] .preloader__fill { animation-name: pl-slide-rtl; }
 @keyframes pl-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
 @keyframes pl-slide-rtl { from { transform: translateX(100%); } to { transform: translateX(-250%); } }
-
-/* --------------------------------------------------------------- demo bar */
-
-.demo-bar {
-    display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
-    gap: 6px 14px; padding: 7px 48px; position: relative;
-    background: var(--c-text); color: var(--c-paper);
-    font-family: var(--f-body); font-size: .8125rem; line-height: 1.5;
-}
-.db-hidden .demo-bar { display: none; }
-.demo-bar__text { opacity: .88; text-align: center; }
-.demo-bar__cta {
-    padding: 3px 12px; border-radius: 3px;
-    background: var(--c-paper); color: var(--c-text);
-    font-weight: 600; text-decoration: none; white-space: nowrap;
-}
-.demo-bar__cta:hover { background: var(--c-secondary); color: var(--c-on-secondary); }
-.demo-bar__close {
-    position: absolute; inset-inline-end: 10px; top: 50%; translate: 0 -50%;
-    display: grid; place-items: center; width: 28px; height: 28px; border-radius: 3px; opacity: .7;
-}
-.demo-bar__close:hover { opacity: 1; background: rgb(255 255 255 / .1); }
 
 /* ------------------------------------------------------- floating WhatsApp */
 

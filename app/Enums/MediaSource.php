@@ -9,6 +9,8 @@ enum MediaSource: string implements HasLabel
     case Upload = 'upload';
     case Pexels = 'pexels';
     case Pixabay = 'pixabay';
+    case Facebook = 'facebook';
+    case Instagram = 'instagram';
 
     public function getLabel(): string
     {
@@ -16,6 +18,8 @@ enum MediaSource: string implements HasLabel
             self::Upload => 'رفع يدوي',
             self::Pexels => 'Pexels',
             self::Pixabay => 'Pixabay',
+            self::Facebook => 'Facebook',
+            self::Instagram => 'Instagram',
         };
     }
 }

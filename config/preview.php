@@ -34,6 +34,8 @@ return [
 
     'brand_whatsapp' => env('PREVIEW_BRAND_WHATSAPP'),
 
+    'legal_email' => env('PREVIEW_LEGAL_EMAIL', 'privacy@mius.it.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Seeded admin user (read via config so it survives config:cache)

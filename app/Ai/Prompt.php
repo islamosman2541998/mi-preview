@@ -52,6 +52,15 @@ TXT;
             'has_whatsapp' => filled($site->whatsapp) ? 'yes' : null,
         ]);
 
+        $source = (array) $site->source_data;
+        $sourceContext = array_filter([
+            'platform' => $source['platform'] ?? null,
+            'profile_biography' => $source['biography'] ?? null,
+            'website' => $source['website'] ?? null,
+            'post_captions' => collect($source['posts'] ?? [])->pluck('caption')->filter()
+                ->take(8)->map(fn ($caption) => mb_substr((string) $caption, 0, 600))->values()->all(),
+        ]);
+
         $list = $sections->map(function (Section $s) use ($rewrite) {
             $row = [
                 'id' => $s->id,
@@ -75,6 +84,11 @@ TXT;
 
         if ($industry?->ai_hints) {
             $parts[] = "Notes for this industry:\n".$industry->ai_hints;
+        }
+
+        if ($sourceContext) {
+            $parts[] = "Verified source material imported from the business social account. Reuse its facts and service/project descriptions; rewrite captions for website copy and never include hashtags:\n"
+                .json_encode($sourceContext, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         }
 
         if ($rewrite) {

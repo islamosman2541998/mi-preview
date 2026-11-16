@@ -42,6 +42,43 @@ return [
     'currency' => 'EGP',
     'prices_in' => 'Prices in Egyptian pounds',
 
+<<<<<<< Updated upstream
+=======
+    'learn_more' => 'More about us',
+    'all_services' => 'All services',
+    'all_projects' => 'All projects',
+    'services' => 'Services',
+    'slider' => [
+        'previous' => 'Previous items',
+        'next' => 'Next items',
+    ],
+    'request_service' => 'Request this service',
+    'service_greeting' => 'Hello, I would like to ask about: :service',
+    'order' => 'Order now',
+    'order_greeting' => 'Hello, I would like to order: :product',
+    'years_experience' => 'years of experience',
+    'filter_all' => 'All',
+    'view_photo' => 'View photo :n',
+    'back_to_top' => 'Back to top',
+
+    'faq_help' => [
+        'title' => 'Still have a question?',
+        'body' => 'Message us directly and we will get back to you shortly.',
+    ],
+
+    'form' => [
+        'title' => 'Send us your request',
+        'name' => 'Name',
+        'phone' => 'Phone number',
+        'service' => 'Service needed',
+        'choose' => 'Choose a service',
+        'message' => 'Request details',
+        'send' => 'Send on WhatsApp',
+        'intro' => 'New request from the website',
+        'note' => 'WhatsApp opens with your message ready to send.',
+    ],
+
+>>>>>>> Stashed changes
     'rights' => 'All rights reserved',
 
     'demo' => [
