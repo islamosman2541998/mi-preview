@@ -99,6 +99,39 @@ main:focus { outline: none; }
 }
 .wa-float:hover { transform: scale(1.06); }
 
+/* -------------------------------------------------------- reveal on scroll */
+/* html.rv is set by preview.js only once its observer is running. */
+
+.rv [data-reveal] {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity .6s ease var(--rd, 0s), transform .7s cubic-bezier(.2, .7, .2, 1) var(--rd, 0s);
+}
+.rv [data-reveal].is-in { opacity: 1; transform: none; }
+
+/* ----------------------------------------------------------------- lightbox */
+
+.lb-open { overflow: hidden; }
+.lb {
+    position: fixed; inset: 0; z-index: 160;
+    display: none; align-items: center; justify-content: center;
+    padding: 56px 12px; background: rgb(8 10 14 / .93); direction: ltr;
+}
+.lb.is-open { display: flex; }
+.lb__img { max-width: 100%; max-height: 100%; width: auto; object-fit: contain; border-radius: 4px; }
+.lb__btn {
+    position: absolute; display: grid; place-items: center;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgb(255 255 255 / .12); color: #fff; font-size: 1.5rem; line-height: 1;
+}
+.lb__btn:hover { background: rgb(255 255 255 / .24); }
+.lb__close { top: 10px; right: 12px; font-size: 1.1rem; }
+.lb__prev { left: 12px; top: 50%; translate: 0 -50%; }
+.lb__next { right: 12px; top: 50%; translate: 0 -50%; }
+.lb--single .lb__prev, .lb--single .lb__next, .lb--single .lb__count { display: none; }
+.lb__count { position: absolute; bottom: 16px; left: 50%; translate: -50% 0; color: #fff; opacity: .8; font-size: .875rem; font-family: var(--f-body); }
+
+[hidden] { display: none !important; }
+
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

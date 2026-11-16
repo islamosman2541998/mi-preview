@@ -120,7 +120,10 @@ class DemoSiteSeeder extends Seeder
                         ['title' => 'Project management', 'description' => 'Planning and scheduling, subcontractor supervision, cost and quality control.'],
                     ],
                 ],
-                'shared' => ['items' => array_fill(0, 5, ['icon' => null, 'image' => null])],
+                'shared' => ['items' => array_map(
+                    fn (string $icon) => ['image' => null, 'icon' => $icon],
+                    ['crane', 'road', 'key', 'wrench', 'chart'],
+                )],
             ],
 
             'stats' => [

@@ -59,7 +59,7 @@ Pages stay light on mobile: lazy images, constrained sizes, vanilla JS only.
 | Products | Card with photo, price and an "order on WhatsApp" button naming the product. |
 | Menu | Kept, restyled. |
 | Booking | Panel with a service select + WhatsApp button; option chips kept (tests rely on `booking_option`). |
-| Inner page header | Banner using the page's first available photo, with breadcrumb. Without photo: solid band. |
+| Inner page header | Banner using the home hero photo (one consistent banner across the site), otherwise the page's first photo, with breadcrumb. Without photo: solid band. |
 | Footer | Four columns: brand + short about text, pages, services, contact + hours. |
 
 Motion (all disabled under `prefers-reduced-motion`): reveal on scroll, image zoom on hover,

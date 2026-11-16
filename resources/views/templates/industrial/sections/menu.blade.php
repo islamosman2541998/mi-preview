@@ -1,23 +1,20 @@
-@php
-    $categories = $c['categories'] ?? [];
-    $prices = $section->content['shared']['prices'] ?? [];
-@endphp
+@php($categories = \App\Support\SectionView::menu($section, $c))
 @if (count($categories))
-<section id="{{ $anchor }}" data-section="{{ $anchor }}" class="s menu">
+<section id="{{ $anchor }}" data-section="{{ $anchor }}" class="s s--surface menu">
     <div class="wrap">
-        @include('templates.industrial.partials.section-head', ['title' => $c['title'] ?? null])
+        @include('templates.industrial.partials.section-head', ['title' => $c['title'] ?? null, 'intro' => __('preview.prices_in')])
         <div class="menu__cols">
-            @foreach ($categories as $ci => $category)
-                <div class="menu__group">
-                    <h3 class="menu__cat">{{ $category['name'] ?? '' }}</h3>
+            @foreach ($categories as $category)
+                <div class="menu__group" data-reveal>
+                    @if (filled($category['name']))<h3 class="menu__cat">{{ $category['name'] }}</h3>@endif
                     <ul class="menu__items">
-                        @foreach ($category['items'] ?? [] as $ii => $dish)
+                        @foreach ($category['dishes'] as $dish)
                             <li class="menu__item">
                                 <div class="menu__line">
-                                    <span class="menu__name">{{ $dish['name'] ?? '' }}</span>
+                                    <span class="menu__name">{{ $dish['name'] }}</span>
                                     <span class="menu__leader" aria-hidden="true"></span>
-                                    @if (filled($prices[$ci][$ii] ?? null))
-                                        <span class="menu__price">{{ $prices[$ci][$ii] }} {{ __('preview.currency') }}</span>
+                                    @if (filled($dish['price']))
+                                        <span class="menu__price">{{ \App\Support\SectionView::number($dish['price']) }} {{ __('preview.currency') }}</span>
                                     @endif
                                 </div>
                                 @if (filled($dish['description'] ?? null))<p class="menu__desc">{{ $dish['description'] }}</p>@endif

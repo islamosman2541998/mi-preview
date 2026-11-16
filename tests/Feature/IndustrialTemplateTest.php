@@ -133,6 +133,166 @@ class IndustrialTemplateTest extends TestCase
             ->assertSee('<title>من نحن | أكمي</title>', false);
     }
 
+    /** Put a distinct photo in every image slot of the kitchen-sink home page. */
+    private function fillPhotos(Site $site): array
+    {
+        $url = fn (string $name) => "https://images.example.test/{$name}.jpg";
+        $set = [
+            'hero' => ['image' => $url('hero')],
+            'about' => ['image' => $url('about-1'), 'image2' => $url('about-2')],
+            'stats' => ['image' => $url('stats')],
+            'cta' => ['image' => $url('cta')],
+            'faq' => ['image' => $url('faq')],
+            'booking' => ['image' => $url('booking')],
+        ];
+
+        foreach ($site->sections()->get() as $section) {
+            $content = $section->content;
+            foreach ($set[$section->type->value] ?? [] as $key => $value) {
+                $content['shared'][$key] = $value;
+            }
+            if (in_array($section->type, [SectionType::Services, SectionType::Projects], true)) {
+                $content['shared']['items'][0]['image'] = $url($section->type->value);
+            }
+            $section->update(['content' => $content]);
+        }
+
+        return array_map($url, ['hero', 'about-1', 'about-2', 'stats', 'cta', 'faq', 'booking', 'services', 'projects']);
+    }
+
+    /** Remove every photo from the site's sections. */
+    private function stripPhotos(Site $site): void
+    {
+        foreach ($site->sections()->get() as $section) {
+            $content = $section->content;
+            array_walk_recursive($content, function (&$value, $key) {
+                if ($key === 'image' || $key === 'image2') {
+                    $value = null;
+                }
+            });
+            unset($content['shared']['images']);
+            $section->update(['content' => $content]);
+        }
+    }
+
+    #[Test]
+    public function industrial_uses_photos_in_every_slot(): void
+    {
+        $photos = $this->fillPhotos($this->kitchenSink());
+
+        $html = $this->get('http://acme.localhost/')->assertOk()->getContent();
+
+        foreach ($photos as $photo) {
+            $this->assertStringContainsString('src="'.$photo.'"', $html, "{$photo} is not rendered");
+        }
+    }
+
+    #[Test]
+    public function industrial_renders_without_any_photos(): void
+    {
+        $site = $this->kitchenSink();
+        $this->stripPhotos($site);
+
+        $html = $this->get('http://acme.localhost/')->assertOk()->getContent();
+        $main = substr($html, strpos($html, '<main'), strpos($html, '</main>') - strpos($html, '<main'));
+
+        foreach (SectionType::cases() as $type) {
+            if ($type !== SectionType::Gallery) { // a gallery with no photos renders nothing
+                $this->assertStringContainsString('data-section="'.$type->value.'"', $html, "{$type->value} missing");
+            }
+        }
+        $this->assertStringNotContainsString('<img', $main, 'no image elements when the site has no photos');
+        $this->assertStringNotContainsString('src=""', $html);
+    }
+
+    #[Test]
+    public function inner_page_header_uses_the_home_hero_photo_then_a_page_photo(): void
+    {
+        $site = $this->kitchenSink();
+        $this->fillPhotos($site);
+
+        $this->get('http://acme.localhost/about')
+            ->assertOk()
+            ->assertSee('page-head--photo', false)
+            ->assertSee('class="page-head__bg" src="https://images.example.test/hero.jpg"', false);
+
+        // no hero photo → the first photo of the page itself
+        $this->stripPhotos($site);
+        $about = $site->pages()->where('slug', 'about')->first()->sections()->first();
+        $about->update(['content' => array_replace_recursive($about->content, ['shared' => ['image' => 'https://images.example.test/own.jpg']])]);
+
+        $this->get('http://acme.localhost/about')
+            ->assertOk()
+            ->assertSee('class="page-head__bg" src="https://images.example.test/own.jpg"', false);
+
+        // no photos at all → plain band
+        $this->stripPhotos($site);
+        $this->get('http://acme.localhost/about')->assertOk()->assertDontSee('page-head--photo', false)->assertSee('class="crumbs"', false);
+    }
+
+    #[Test]
+    public function contact_form_service_links_and_product_orders_are_tracked(): void
+    {
+        $this->kitchenSink();
+
+        $this->get('http://acme.localhost/')
+            ->assertOk()
+            ->assertSee('data-wa-form', false)
+            ->assertSee('data-wa="201005550142"', false)
+            ->assertSee('data-track-label="contact_form"', false)
+            ->assertSee('data-track-label="product_order"', false)
+            ->assertSee('data-track-label="service"', false)
+            ->assertSee('data-count="850"', false)
+            ->assertSee('data-lightbox', false);
+    }
+
+    #[Test]
+    public function without_whatsapp_there_is_no_form_and_no_dead_whatsapp_link(): void
+    {
+        config(['preview.brand_whatsapp' => null]);
+        $this->kitchenSink(['whatsapp' => null]);
+
+        $html = $this->get('http://acme.localhost/')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('data-wa-form', $html);
+        $this->assertStringNotContainsString('wa.me', $html);
+        $this->assertStringNotContainsString('product_order', $html);
+        $this->assertStringContainsString('data-track="phone"', $html, 'falls back to calling');
+    }
+
+    #[Test]
+    public function service_icons_come_from_the_content_with_a_default(): void
+    {
+        $site = $this->kitchenSink();
+        $services = $site->sections()->where('type', SectionType::Services)->first();
+        $content = $services->content;
+        $content['shared']['items'][0]['icon'] = 'crane';
+        $content['shared']['items'][1]['icon'] = 'not-an-icon';
+        $services->update(['content' => $content]);
+
+        $this->get('http://acme.localhost/')
+            ->assertOk()
+            ->assertSee('icon-crane', false)
+            ->assertSee('icon-sparkle', false)
+            ->assertDontSee('icon-not-an-icon', false);
+    }
+
+    #[Test]
+    public function projects_page_offers_a_category_filter(): void
+    {
+        $site = Site::factory()->create(['slug' => 'acme']);
+        app(SiteBuilder::class)->build($site, ['pages' => [
+            ['slug' => 'home', 'is_home' => true, 'sections' => ['hero']],
+            ['slug' => 'projects', 'title' => ['ar' => 'مشاريعنا', 'en' => 'Projects'], 'sections' => ['projects']],
+        ]], DemoSiteSeeder::content());
+
+        $this->get('http://acme.localhost/projects')
+            ->assertOk()
+            ->assertSee('data-filter-scope', false)
+            ->assertSee('data-filter="*"', false)
+            ->assertSee('data-category="سكني"', false);
+    }
+
     #[Test]
     public function empty_optional_sections_render_nothing(): void
     {

@@ -11,7 +11,9 @@ use App\Models\Site;
  * provides them, otherwise derived from the rest of the site (first
  * certification, founding year, head office, phone).
  *
- * @return list<array{label: string, value: string}>
+ * Derived facts also carry "key": the icon that suits them.
+ *
+ * @return list<array{label: string, value: string, key?: string}>
  */
 class SiteFacts
 {
@@ -31,23 +33,23 @@ class SiteFacts
 
         $cert = $first(SectionType::Certifications)['items'][0]['name'] ?? null;
         if (filled($cert)) {
-            $facts[] = ['label' => __('preview.facts.classification'), 'value' => $cert];
+            $facts[] = ['key' => 'award', 'label' => __('preview.facts.classification'), 'value' => $cert];
         }
 
         $since = $first(SectionType::About)['since'] ?? null;
         if (filled($since)) {
-            $facts[] = ['label' => __('preview.facts.since'), 'value' => (string) $since];
+            $facts[] = ['key' => 'clock', 'label' => __('preview.facts.since'), 'value' => (string) $since];
         }
 
         $address = $site->address($locale);
         if (filled($address)) {
             // the area is enough on a signboard: last comma-separated part
             $parts = array_map('trim', preg_split('/[،,]/u', $address));
-            $facts[] = ['label' => __('preview.facts.location'), 'value' => end($parts)];
+            $facts[] = ['key' => 'pin', 'label' => __('preview.facts.location'), 'value' => end($parts)];
         }
 
         if (filled($site->phone)) {
-            $facts[] = ['label' => __('preview.facts.phone'), 'value' => $site->phone];
+            $facts[] = ['key' => 'phone', 'label' => __('preview.facts.phone'), 'value' => $site->phone];
         }
 
         return $facts;

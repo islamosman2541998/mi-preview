@@ -1,15 +1,17 @@
-@php($logos = array_values(array_filter($section->content['shared']['logos'] ?? [], fn ($l) => filled($l['name'] ?? null) || filled($l['image'] ?? null))))
+@php($logos = \App\Support\SectionView::logos($section))
 @if (count($logos))
-<section id="{{ $anchor }}" data-section="{{ $anchor }}" class="s s--tight clients">
-    <div class="wrap clients__row">
+<section id="{{ $anchor }}" data-section="{{ $anchor }}" class="clients">
+    <div class="wrap">
         @if (filled($c['title'] ?? null))<h2 class="clients__title">{{ $c['title'] }}</h2>@endif
-        <ul class="clients__list">
+        <ul class="clients__grid" data-reveal>
             @foreach ($logos as $logo)
-                <li class="clients__item">
-                    @if ($src = \App\Support\MediaUrl::for($logo['image'] ?? null))
-                        <img src="{{ $src }}" alt="{{ $logo['name'] ?? '' }}" height="40" loading="lazy" decoding="async">
+                <li class="client">
+                    @if ($logo['img'])
+                        <img src="{{ $logo['img'] }}" alt="{{ $logo['name'] ?? '' }}" height="44" loading="lazy" decoding="async">
                     @else
-                        <span class="clients__word" dir="auto">{{ $logo['name'] }}</span>
+                        {{-- no logo file: a monogram tile, not a blank box --}}
+                        <span class="client__mono" aria-hidden="true">{{ \App\Support\SectionView::initial($logo['name']) }}</span>
+                        <span class="client__name" dir="auto">{{ $logo['name'] }}</span>
                     @endif
                 </li>
             @endforeach
