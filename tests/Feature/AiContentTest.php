@@ -23,6 +23,7 @@ use App\Models\Page;
 use App\Models\Section;
 use App\Models\Site;
 use App\Models\User;
+use App\Support\ServiceIcons;
 use Database\Seeders\IndustrySeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
@@ -213,7 +214,7 @@ class AiContentTest extends TestCase
         $hero = SectionSchema::forType(SectionType::Hero);
         $this->assertArrayHasKey('image_query', $hero['properties']);
         $this->assertArrayHasKey('image_query', SectionSchema::forType(SectionType::Projects)['properties']['items']['items']['properties']);
-        $this->assertArrayNotHasKey('image_query', SectionSchema::forType(SectionType::Faq)['properties']);
+        $this->assertArrayNotHasKey('image_query', SectionSchema::forType(SectionType::Testimonials)['properties']);
         $this->assertSame('number', SectionSchema::forType(SectionType::Stats)['properties']['items']['items']['properties']['value']['type']);
     }
 
@@ -332,19 +333,7 @@ class AiContentTest extends TestCase
         $about->update(['content' => ['shared' => ['image' => 'sites/'.$site->id.'/mine.jpg']]]);
         $this->reply = fn () => $this->replyFor($site);
 
-        config(['services.pixabay.key' => 'k']);
-        $hits = fn (int $from) => array_map(fn ($i) => [
-            'id' => $i, 'pageURL' => "https://pixabay.com/p/{$i}", 'tags' => 't', 'webformatURL' => "https://pixabay.com/get/{$i}_640.jpg",
-            'largeImageURL' => "https://pixabay.com/get/{$i}_1280.jpg", 'imageWidth' => 1, 'imageHeight' => 1, 'user' => 'u', 'user_id' => 1,
-        ], range($from, $from + 2));
-        Http::fake([
-            'pixabay.com/api/*' => function ($r) use ($hits) {
-                return isset($r['id'])
-                    ? Http::response(['totalHits' => 1, 'hits' => $hits((int) $r['id'])])
-                    : Http::response(['totalHits' => 3, 'hits' => $hits(100)]); // every search returns 100,101,102
-            },
-            'pixabay.com/get/*' => Http::response('IMG', 200, ['Content-Type' => 'image/jpeg']),
-        ]);
+        $this->fakePixabay();
 
         $run = $this->runNow($site, null, ['fill_images' => true]);
 
@@ -356,7 +345,103 @@ class AiContentTest extends TestCase
         $this->assertSame("sites/{$site->id}/media/pixabay-100.jpg", $hero['shared']['image']);
         $this->assertCount(3, array_unique($used), 'no photo used twice');
         $this->assertSame('sites/'.$site->id.'/mine.jpg', $this->sectionOf($site, SectionType::About)->content['shared']['image'], 'hand-picked image kept');
-        $this->assertSame(3, $site->media()->where('source', 'pixabay')->count());
+        // hero, about (second photo), two projects — the cta reply carries no image_query, so it stays empty
+        $this->assertSame(4, $site->media()->where('source', 'pixabay')->count());
+    }
+
+    /** Every Pixabay search returns the same photos 100…(99 + $perSearch); downloads succeed. */
+    private function fakePixabay(int $perSearch = 8): void
+    {
+        config(['services.pixabay.key' => 'k']);
+        $hits = fn (int $from, int $count) => array_map(fn ($i) => [
+            'id' => $i, 'pageURL' => "https://pixabay.com/p/{$i}", 'tags' => 't', 'webformatURL' => "https://pixabay.com/get/{$i}_640.jpg",
+            'largeImageURL' => "https://pixabay.com/get/{$i}_1280.jpg", 'imageWidth' => 1, 'imageHeight' => 1, 'user' => 'u', 'user_id' => 1,
+        ], range($from, $from + $count - 1));
+        Http::fake([
+            'pixabay.com/api/*' => function ($r) use ($hits, $perSearch) {
+                return isset($r['id'])
+                    ? Http::response(['totalHits' => 1, 'hits' => $hits((int) $r['id'], 1)])
+                    : Http::response(['totalHits' => $perSearch, 'hits' => $hits(100, $perSearch)]);
+            },
+            'pixabay.com/get/*' => Http::response('IMG', 200, ['Content-Type' => 'image/jpeg']),
+        ]);
+    }
+
+    #[Test]
+    public function schema_lets_the_model_pick_a_service_icon(): void
+    {
+        $item = SectionSchema::forType(SectionType::Services)['properties']['items']['items']['properties'];
+
+        $this->assertSame(ServiceIcons::KEYS, $item['icon']['enum']);
+        $this->assertArrayHasKey('image_query', $item);
+
+        foreach ([SectionType::Stats, SectionType::Cta, SectionType::Faq, SectionType::Booking] as $type) {
+            $this->assertArrayHasKey('image_query', SectionSchema::forType($type)['properties'], $type->value);
+        }
+    }
+
+    #[Test]
+    public function regenerating_keeps_photos_in_new_slots(): void
+    {
+        $cta = ContentGenerator::merge(SectionType::Cta,
+            ['ar' => ['title' => 'قديم'], 'shared' => ['image' => 'sites/1/bg.jpg']],
+            ['ar' => ['title' => 'جديد', 'body' => 'ن', 'button' => 'ز'], 'en' => ['title' => 'New', 'body' => 'b', 'button' => 'x'], 'image_query' => 'q']);
+        $this->assertSame('sites/1/bg.jpg', $cta['shared']['image']);
+        $this->assertSame('جديد', $cta['ar']['title']);
+
+        $about = ContentGenerator::merge(SectionType::About,
+            ['ar' => ['title' => 'قديم'], 'shared' => ['image' => 'sites/1/a.jpg', 'image2' => 'sites/1/b.jpg']],
+            ['ar' => ['title' => 'جديد', 'body' => 'ن'], 'en' => ['title' => 'New', 'body' => 'b'], 'shared' => ['since' => 2009], 'image_query' => 'q']);
+        $this->assertSame('sites/1/b.jpg', $about['shared']['image2']);
+
+        $services = ContentGenerator::merge(SectionType::Services,
+            ['ar' => ['items' => [['title' => 'أ']]], 'en' => ['items' => [['title' => 'A']]], 'shared' => ['items' => [['image' => 'sites/1/s.jpg', 'icon' => 'tools']]]],
+            ['ar' => ['title' => 'خدمات', 'intro' => 'م'], 'en' => ['title' => 'Services', 'intro' => 'i'], 'items' => [
+                ['title_ar' => 'حفر', 'title_en' => 'Excavation', 'description_ar' => 'و', 'description_en' => 'd', 'icon' => 'crane', 'image_query' => 'excavator'],
+                ['title_ar' => 'طرق', 'title_en' => 'Roads', 'description_ar' => 'و', 'description_en' => 'd', 'icon' => 'not-an-icon', 'image_query' => 'road works'],
+            ]]);
+        $this->assertSame('sites/1/s.jpg', $services['shared']['items'][0]['image'], 'photo kept by index');
+        $this->assertSame('crane', $services['shared']['items'][0]['icon'], 'icon comes from the model');
+        $this->assertSame('sparkle', $services['shared']['items'][1]['icon'], 'unknown icon → default');
+        $this->assertSame(['excavator', 'road works'], $services['ai']['item_queries']);
+    }
+
+    #[Test]
+    public function image_fill_covers_new_slots_only_when_empty(): void
+    {
+        $site = $this->site();
+        $page = $site->pages()->first();
+        $mine = 'sites/'.$site->id.'/mine.jpg';
+        $services = Section::factory()->for($page)->create(['type' => SectionType::Services, 'sort' => 10, 'content' => ['ar' => ['title' => 'قديم']]]);
+        $stats = Section::factory()->for($page)->create(['type' => SectionType::Stats, 'sort' => 11, 'content' => ['ar' => ['title' => 'قديم'], 'shared' => ['image' => $mine]]]);
+
+        $this->reply = function () use ($site, $services, $stats) {
+            $reply = $this->replyFor($site->fresh());
+            foreach ($reply['sections'] as &$entry) {
+                if ($entry['id'] === $services->id) {
+                    $entry['content'] = ['ar' => ['title' => 'خدمات', 'intro' => 'م'], 'en' => ['title' => 'Services', 'intro' => 'i'], 'items' => [
+                        ['title_ar' => 'حفر', 'title_en' => 'Excavation', 'description_ar' => 'و', 'description_en' => 'd', 'icon' => 'crane', 'image_query' => 'excavator'],
+                    ]];
+                }
+                if ($entry['id'] === $stats->id) {
+                    $entry['content'] = ['ar' => ['title' => 'أرقام'], 'en' => ['title' => 'Figures'], 'items' => [], 'image_query' => 'construction site aerial'];
+                }
+                if ($entry['type'] === 'cta') {
+                    $entry['content']['image_query'] = 'engineers handshake';
+                }
+            }
+
+            return $reply;
+        };
+        $this->fakePixabay();
+
+        $run = $this->runNow($site, null, ['fill_images' => true]);
+
+        $this->assertSame(AiRun::DONE, $run->status, (string) $run->error);
+        $this->assertStringStartsWith("sites/{$site->id}/media/pixabay-", $services->fresh()->content['shared']['items'][0]['image']);
+        $this->assertStringStartsWith("sites/{$site->id}/media/pixabay-", $this->sectionOf($site, SectionType::Cta)->content['shared']['image']);
+        $this->assertStringStartsWith("sites/{$site->id}/media/pixabay-", $this->sectionOf($site, SectionType::About)->content['shared']['image2']);
+        $this->assertSame($mine, $stats->fresh()->content['shared']['image'], 'hand-picked background kept');
     }
 
     #[Test]

@@ -4,6 +4,7 @@ namespace App\Ai;
 
 use App\Enums\SectionType;
 use App\Filament\Support\SectionFields;
+use App\Support\ServiceIcons;
 
 /**
  * JSON schemas for AI output, derived from the same per-type definitions the admin
@@ -16,7 +17,7 @@ use App\Filament\Support\SectionFields;
  * SectionFields::fromForm() already turns into stored content:
  *   ar / en          {field: string}
  *   shared           {number fields}
- *   items            [{field_ar, field_en, number/suffix fields, image_query?}]
+ *   items            [{field_ar, field_en, number/suffix fields, icon?, image_query?}]
  *   lists            {key: [{ar, en}]}
  *   logos            [{name}]
  *   menu             [{name_ar, name_en, dishes: [{name_ar, name_en, description_ar, description_en, price}]}]
@@ -121,6 +122,7 @@ class SectionSchema
             foreach ($sharedFields as $f => $spec) {
                 $row[$f] = match ($spec[0]) {
                     'image' => null,
+                    'icon' => ['type' => 'string', 'enum' => ServiceIcons::KEYS, 'description' => 'The icon closest to this service.'],
                     'number' => self::num(self::HINTS["{$t}.{$f}"] ?? ''),
                     default => self::str(self::HINTS["{$t}.{$f}"] ?? ''),
                 };
@@ -181,14 +183,15 @@ class SectionSchema
     /**
      * Image fields this section can have filled from stock photos.
      *
-     * @return list<string> "image" (shared), "images" (shared gallery) or "items.image"
+     * @return list<string> "image" / "image2" (shared), "images" (shared gallery) or "items.image"
      */
     public static function imageFields(SectionType $type): array
     {
         return match ($type) {
-            SectionType::Hero, SectionType::About => ['image'],
+            SectionType::Hero, SectionType::Stats, SectionType::Cta, SectionType::Faq, SectionType::Booking => ['image'],
+            SectionType::About => ['image', 'image2'],
             SectionType::Gallery => ['images'],
-            SectionType::Projects, SectionType::Products => ['items.image'],
+            SectionType::Services, SectionType::Projects, SectionType::Products => ['items.image'],
             default => [],
         };
     }

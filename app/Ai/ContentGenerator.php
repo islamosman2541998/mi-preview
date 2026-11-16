@@ -9,6 +9,7 @@ use App\Models\Section;
 use App\Models\Site;
 use App\Services\Stock\StockPhotos;
 use App\Services\Stock\StockProvider;
+use App\Support\ServiceIcons;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -160,7 +161,11 @@ class ContentGenerator
                     $new["{$f}_en"] = $row["{$f}_en"] ?? null;
                 }
                 foreach ($sharedFields as $f => $spec) {
-                    $new[$f] = $spec[0] === 'image' ? ($old[$i][$f] ?? null) : ($row[$f] ?? null);
+                    $new[$f] = match ($spec[0]) {
+                        'image' => $old[$i][$f] ?? null,
+                        'icon' => ServiceIcons::resolve($row[$f] ?? null),
+                        default => $row[$f] ?? null,
+                    };
                 }
                 $form['items'][] = $new;
             }
@@ -229,6 +234,11 @@ class ContentGenerator
                 foreach (SectionSchema::imageFields($section->type) as $field) {
                     if ($field === 'image' && blank($content['shared']['image'] ?? null) && $query) {
                         $content['shared']['image'] = $this->pick($provider, $site, $query, 1, $used)[0] ?? null;
+                    }
+
+                    // a second photo of the same scene: the same search, next unused result
+                    if ($field === 'image2' && blank($content['shared']['image2'] ?? null) && $query) {
+                        $content['shared']['image2'] = $this->pick($provider, $site, $query, 1, $used)[0] ?? null;
                     }
 
                     if ($field === 'images' && empty($content['shared']['images'] ?? []) && $query) {

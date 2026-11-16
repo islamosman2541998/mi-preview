@@ -32,6 +32,7 @@ Writing
 Output
 - Return exactly one entry in "sections" for every section listed in the request, with the same id and type, in the same order. Fill every field; use an empty string only where a field truly doesn't apply.
 - image_query fields: short English searches for free stock photos of the scene (e.g. "concrete pouring construction site", "dental clinic interior"); no brand names or text.
+- icon fields: pick the listed key closest to that item (e.g. "crane" for structural works, "drop" for plumbing); when nothing fits use "sparkle".
 - seo: title and meta description for the home page in both languages.
 TXT;
 
