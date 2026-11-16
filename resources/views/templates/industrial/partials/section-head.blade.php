@@ -1,0 +1,6 @@
+@if (filled($title ?? null) || filled($intro ?? null))
+    <div class="s-head">
+        @if (filled($title ?? null))<h2 class="s-head__title">{{ $title }}</h2>@endif
+        @if (filled($intro ?? null))<p class="s-head__intro">{{ $intro }}</p>@endif
+    </div>
+@endif
