@@ -1,6 +1,6 @@
 {
   "resources/css/templates/bold.css": {
-    "file": "assets/bold-iGOHcDTD.css",
+    "file": "assets/bold-NP4yitgC.css",
     "name": "bold",
     "names": [
       "bold.css"
@@ -9,7 +9,7 @@
     "isEntry": true
   },
   "resources/css/templates/boutique.css": {
-    "file": "assets/boutique-LPkx-CzW.css",
+    "file": "assets/boutique-AgJLa922.css",
     "name": "boutique",
     "names": [
       "boutique.css"
@@ -18,7 +18,7 @@
     "isEntry": true
   },
   "resources/css/templates/editorial.css": {
-    "file": "assets/editorial-DUeanfp0.css",
+    "file": "assets/editorial-CEPfk_-g.css",
     "name": "editorial",
     "names": [
       "editorial.css"
@@ -27,7 +27,7 @@
     "isEntry": true
   },
   "resources/css/templates/industrial.css": {
-    "file": "assets/industrial-BEPS-OPa.css",
+    "file": "assets/industrial-DWCwFbgE.css",
     "name": "industrial",
     "names": [
       "industrial.css"
@@ -42,7 +42,7 @@
     "isEntry": true
   },
   "resources/js/preview.js": {
-    "file": "assets/preview-qRyIbqiZ.js",
+    "file": "assets/preview-BZ3VWiD9.js",
     "name": "preview",
     "src": "resources/js/preview.js",
     "isEntry": true
