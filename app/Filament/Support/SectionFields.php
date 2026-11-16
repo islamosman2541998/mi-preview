@@ -3,8 +3,10 @@
 namespace App\Filament\Support;
 
 use App\Enums\SectionType;
+use App\Support\ServiceIcons;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
@@ -34,6 +36,9 @@ class SectionFields
 
     private const URL = 'url';
 
+    /** A key from App\Support\ServiceIcons (a select in the admin, an enum for the AI). */
+    public const ICON = 'icon';
+
     /**
      * text   → per-locale scalar fields
      * shared → locale-independent scalar fields
@@ -62,12 +67,12 @@ class SectionFields
             ],
             SectionType::About => [
                 'text' => $title + ['body' => [self::AREA, 'النص']],
-                'shared' => ['image' => [self::IMAGE, 'صورة'], 'since' => [self::NUMBER, 'سنة التأسيس']],
+                'shared' => ['image' => [self::IMAGE, 'صورة'], 'image2' => [self::IMAGE, 'صورة ثانية (اختياري)'], 'since' => [self::NUMBER, 'سنة التأسيس']],
                 'lists' => ['points' => 'نقاط مميزة'],
             ],
             SectionType::Services => [
                 'text' => $title + ['intro' => [self::AREA, 'مقدمة']],
-                'items' => ['items', 'الخدمات', ['title' => [self::TEXT, 'اسم الخدمة'], 'description' => [self::AREA, 'الوصف']], ['image' => [self::IMAGE, 'صورة (اختياري)']]],
+                'items' => ['items', 'الخدمات', ['title' => [self::TEXT, 'اسم الخدمة'], 'description' => [self::AREA, 'الوصف']], ['image' => [self::IMAGE, 'صورة (اختياري)'], 'icon' => [self::ICON, 'الأيقونة']]],
             ],
             SectionType::Projects => [
                 'text' => $title + ['intro' => [self::AREA, 'مقدمة']],
@@ -84,6 +89,7 @@ class SectionFields
             ],
             SectionType::Stats => [
                 'text' => $title,
+                'shared' => ['image' => [self::IMAGE, 'صورة الخلفية (اختياري)']],
                 'items' => ['items', 'الأرقام', ['label' => [self::TEXT, 'الوصف']], ['value' => [self::NUMBER, 'الرقم'], 'suffix' => [self::TEXT, 'لاحقة (+، %)']]],
             ],
             SectionType::Testimonials => [
@@ -96,10 +102,12 @@ class SectionFields
             ],
             SectionType::Faq => [
                 'text' => $title + ['intro' => [self::AREA, 'مقدمة']],
+                'shared' => ['image' => [self::IMAGE, 'صورة جانبية (اختياري)']],
                 'items' => ['items', 'الأسئلة', ['q' => [self::TEXT, 'السؤال'], 'a' => [self::AREA, 'الإجابة']], []],
             ],
             SectionType::Cta => [
                 'text' => $title + ['body' => [self::AREA, 'النص'], 'button' => [self::TEXT, 'نص الزر']],
+                'shared' => ['image' => [self::IMAGE, 'صورة الخلفية (اختياري)']],
             ],
             SectionType::Contact => [
                 'text' => $title + ['body' => [self::AREA, 'النص'], 'hours' => [self::TEXT, 'مواعيد العمل']],
@@ -114,6 +122,7 @@ class SectionFields
             ],
             SectionType::Booking => [
                 'text' => $title + ['body' => [self::AREA, 'النص'], 'button' => [self::TEXT, 'نص الزر']],
+                'shared' => ['image' => [self::IMAGE, 'صورة جانبية (اختياري)']],
                 'lists' => ['options' => 'الخدمات المتاحة للحجز'],
             ],
             SectionType::Products => [
@@ -427,6 +436,7 @@ class SectionFields
             self::IMAGES => self::withPicker(FileUpload::make($name)->image()->multiple()->reorderable()->panelLayout('grid')->disk('public')->directory($dir)->visibility('public')->maxSize(4096)->maxFiles(24), multiple: true),
             self::NUMBER => TextInput::make($name)->numeric(),
             self::URL => TextInput::make($name)->url()->maxLength(2048),
+            self::ICON => Select::make($name)->options(ServiceIcons::options())->searchable()->native(false),
             default => TextInput::make($name)->maxLength(500),
         };
 

@@ -6,6 +6,7 @@ use App\Enums\SectionType;
 use App\Filament\Support\SectionFields;
 use App\Models\Site;
 use App\Services\SectionDefaults;
+use App\Support\ServiceIcons;
 use Database\Seeders\DemoSiteSeeder;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -64,10 +65,40 @@ class SectionFieldsTest extends TestCase
     #[Test]
     public function blank_strings_are_stored_as_null(): void
     {
-        $content = SectionFields::fromForm(SectionType::Cta, ['ar' => ['title' => '  ', 'body' => 'نص', 'button' => ''], 'en' => []]);
+        $content = SectionFields::fromForm(SectionType::Contact, ['ar' => ['title' => '  ', 'body' => 'نص', 'hours' => ''], 'en' => []]);
 
         $this->assertNull($content['ar']['title']);
         $this->assertSame('نص', $content['ar']['body']);
         $this->assertArrayNotHasKey('shared', $content);
+    }
+
+    #[Test]
+    public function new_image_slots_and_service_icon_round_trip(): void
+    {
+        $about = SectionFields::fromForm(SectionType::About, ['ar' => ['title' => 'ع'], 'shared' => ['image' => 'a.jpg', 'image2' => 'b.jpg', 'since' => '2009']]);
+        $this->assertSame('b.jpg', $about['shared']['image2']);
+        $this->assertSame('b.jpg', SectionFields::toForm(SectionType::About, $about)['shared']['image2']);
+
+        foreach ([SectionType::Stats, SectionType::Cta, SectionType::Faq, SectionType::Booking] as $type) {
+            $content = SectionFields::fromForm($type, ['ar' => ['title' => 'ع'], 'shared' => ['image' => 'bg.jpg']]);
+            $this->assertSame('bg.jpg', $content['shared']['image'], $type->value);
+            $this->assertSame('bg.jpg', SectionFields::toForm($type, $content)['shared']['image'], $type->value);
+        }
+
+        $services = SectionFields::fromForm(SectionType::Services, ['ar' => ['title' => 'خ'], 'items' => [
+            ['title_ar' => 'حفر', 'title_en' => 'Excavation', 'image' => 's.jpg', 'icon' => 'crane'],
+        ]]);
+        $this->assertSame([['image' => 's.jpg', 'icon' => 'crane']], $services['shared']['items']);
+        $this->assertSame('crane', SectionFields::toForm(SectionType::Services, $services)['items'][0]['icon']);
+    }
+
+    #[Test]
+    public function service_icons_resolve_unknown_keys_to_default(): void
+    {
+        $this->assertSame('sparkle', ServiceIcons::resolve('nope'));
+        $this->assertSame('sparkle', ServiceIcons::resolve(null));
+        $this->assertSame('crane', ServiceIcons::resolve('crane'));
+        $this->assertCount(30, ServiceIcons::KEYS);
+        $this->assertSame(ServiceIcons::KEYS, array_keys(ServiceIcons::options()));
     }
 }
