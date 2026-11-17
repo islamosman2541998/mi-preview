@@ -73,8 +73,9 @@ class SocialProfileImporter
                 'path' => $path,
                 'source' => $platform === 'instagram' ? MediaSource::Instagram : MediaSource::Facebook,
                 'credit' => ucfirst($platform),
-                'alt_ar' => $caption,
-                'alt_en' => $caption,
+                // alt text columns are varchar(255); the whole caption stays in meta
+                'alt_ar' => $caption !== null ? mb_strimwidth($caption, 0, 255, '…') : null,
+                'alt_en' => $caption !== null ? mb_strimwidth($caption, 0, 255, '…') : null,
                 'meta' => array_filter([
                     'caption' => $caption,
                     'permalink' => $post['permalink'] ?? null,

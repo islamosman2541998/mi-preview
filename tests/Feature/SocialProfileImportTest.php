@@ -298,6 +298,26 @@ class SocialProfileImportTest extends TestCase
         $this->assertStringContainsString('Factory control panel installation', $prompt);
     }
 
+    /** MySQL rejects values longer than the varchar(255) alt / credit columns (SQLite does not). */
+    #[Test]
+    public function long_post_captions_fit_the_media_columns_and_stay_whole_in_meta(): void
+    {
+        Http::fake(['scontent.fbcdn.test/*' => Http::response('JPEG', 200, ['Content-Type' => 'image/jpeg'])]);
+        $caption = str_repeat('لوحة تحكم صناعية مع تركيب كامل وتشغيل في المصنع. ', 40);
+        $profile = $this->facebookProfile();
+        $profile['posts'][0]['caption'] = $caption;
+        $site = Site::factory()->create(['source_url' => 'https://www.facebook.com/acme.controls', 'source_data' => $profile]);
+        app(SiteBuilder::class)->build($site);
+
+        app(SocialProfileImporter::class)->importMediaAndSeed($site);
+
+        $media = $site->media()->where('source', MediaSource::Facebook)->orderBy('id')->firstOrFail();
+        $this->assertLessThanOrEqual(255, mb_strlen($media->alt_ar));
+        $this->assertLessThanOrEqual(255, mb_strlen($media->alt_en));
+        $this->assertStringStartsWith('لوحة تحكم صناعية', $media->alt_ar);
+        $this->assertGreaterThan(255, mb_strlen($media->meta['caption']), 'full caption kept for the AI and the admin');
+    }
+
     #[Test]
     public function post_links_and_unsupported_hosts_are_rejected(): void
     {
