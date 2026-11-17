@@ -120,7 +120,7 @@ return [
         'industrial' => [
             'ar' => 'صناعي / مؤسسي',
             'en' => 'Industrial / corporate',
-            'font' => 'alexandria-plex',
+            'font' => 'cairo-tajawal',
             'for' => 'مقاولات، إطفاء، توريدات',
         ],
         'editorial' => [
@@ -149,11 +149,22 @@ return [
     |--------------------------------------------------------------------------
     |
     | Google Fonts families (loaded with display=swap). All of them cover both
-    | Arabic and Latin. Cairo/Tajawal are deliberately not offered.
+    | Arabic and Latin. The industrial template offers Cairo/Tajawal in either
+    | hierarchy so the owner can choose the primary brand voice.
     |
     */
 
     'fonts' => [
+        'cairo-tajawal' => [
+            'label' => 'Cairo أساسي + Tajawal للنصوص',
+            'heading' => ['family' => 'Cairo', 'weights' => [600, 700, 800]],
+            'body' => ['family' => 'Tajawal', 'weights' => [400, 500, 600, 700]],
+        ],
+        'tajawal-cairo' => [
+            'label' => 'Tajawal أساسي + Cairo للنصوص',
+            'heading' => ['family' => 'Tajawal', 'weights' => [600, 700, 800]],
+            'body' => ['family' => 'Cairo', 'weights' => [400, 500, 600, 700]],
+        ],
         'alexandria-plex' => [
             'label' => 'Alexandria + IBM Plex Sans Arabic',
             'heading' => ['family' => 'Alexandria', 'weights' => [500, 700]],

@@ -204,4 +204,16 @@ class TemplatesTest extends TestCase
         $this->assertStringContainsString('--f-heading:"Amiri", "Times New Roman", serif', Fonts::cssVariables($site));
         $this->assertStringContainsString('--f-body:"IBM Plex Sans Arabic", system-ui', Fonts::cssVariables($site));
     }
+
+    #[Test]
+    public function industrial_font_hierarchy_can_be_swapped_between_cairo_and_tajawal(): void
+    {
+        $cairoFirst = Site::factory()->make(['template' => 'industrial']);
+        $tajawalFirst = Site::factory()->make(['template' => 'industrial', 'font_key' => 'tajawal-cairo']);
+
+        $this->assertSame('Cairo', Fonts::pairing($cairoFirst)['heading']['family']);
+        $this->assertSame('Tajawal', Fonts::pairing($cairoFirst)['body']['family']);
+        $this->assertSame('Tajawal', Fonts::pairing($tajawalFirst)['heading']['family']);
+        $this->assertSame('Cairo', Fonts::pairing($tajawalFirst)['body']['family']);
+    }
 }

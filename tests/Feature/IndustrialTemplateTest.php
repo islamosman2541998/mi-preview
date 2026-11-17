@@ -84,7 +84,8 @@ class IndustrialTemplateTest extends TestCase
             ->assertSee('class="wa-float"', false)
             ->assertSee('data-track="whatsapp"', false)
             ->assertSee('data-track="phone"', false)
-            ->assertSee('fonts.googleapis.com/css2?family=Alexandria', false)
+            ->assertSee('fonts.googleapis.com/css2?family=Cairo', false)
+            ->assertSee('family=Tajawal', false)
             ->assertSee('--c-primary:', false)
             ->assertSee('/js/t.js', false);
     }

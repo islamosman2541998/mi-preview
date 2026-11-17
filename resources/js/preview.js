@@ -80,6 +80,34 @@
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const canObserve = 'IntersectionObserver' in window;
 
+    // ----------------------------------------------- industrial page transition
+    // Keep navigation feeling continuous without delaying external links, downloads,
+    // anchors, modified clicks, or visitors who prefer reduced motion.
+    if (document.body.classList.contains('tpl-industrial') && !reduceMotion) {
+        let leaving = false;
+        document.addEventListener('click', (event) => {
+            const link = event.target.closest('a[href]');
+            if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (link.target || link.hasAttribute('download')) return;
+
+            const next = new URL(link.href, window.location.href);
+            const sameDocumentAnchor = next.pathname === window.location.pathname
+                && next.search === window.location.search
+                && next.hash;
+            if (next.origin !== window.location.origin || sameDocumentAnchor || !['http:', 'https:'].includes(next.protocol)) return;
+
+            event.preventDefault();
+            if (leaving) return;
+            leaving = true;
+            html.classList.add('page-leaving');
+            window.setTimeout(() => window.location.assign(next.href), 230);
+        });
+        window.addEventListener('pageshow', () => {
+            leaving = false;
+            html.classList.remove('page-leaving');
+        });
+    }
+
     // ------------------------------------------------------ reveal on scroll
     // Elements are hidden only once this script is running (html.rv), so a failed
     // script never leaves content invisible.
