@@ -28,6 +28,7 @@
             'section' => $section,
             'c' => $section->contentFor($locale),
             'anchor' => $section->anchor(),
+            'index' => $loop->iteration,
         ])
     @endforeach
 </main>

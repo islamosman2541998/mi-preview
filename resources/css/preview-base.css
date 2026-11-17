@@ -110,6 +110,40 @@ main:focus { outline: none; }
 
 [hidden] { display: none !important; }
 
+/* ----------------------------------------------------------- section slider */
+/* Mechanics only; each template restyles .section-slider__button. preview.js reads --slider-cols. */
+
+.section-slider { --slider-cols: 1; --slider-gap: 16px; position: relative; }
+.section-slider__controls { display: flex; justify-content: flex-end; gap: 8px; margin-block: -10px 18px; }
+.section-slider__button {
+    display: grid; place-items: center; width: 42px; height: 42px;
+    border: 1px solid currentColor; border-radius: 50%;
+    background: var(--c-paper); color: inherit;
+    transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease;
+}
+.section-slider__button:hover { transform: translateY(-1px); }
+.section-slider__button--prev .icon { transform: rotate(180deg); }
+[dir="rtl"] .section-slider__button--prev .icon { transform: none; }
+[dir="rtl"] .section-slider__button--next .icon { transform: rotate(180deg); }
+
+.section-slider .section-slider__track {
+    display: flex !important; flex-wrap: nowrap !important; justify-content: flex-start;
+    gap: var(--slider-gap); overflow-x: auto; overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory; scroll-behavior: smooth; scrollbar-width: none;
+    cursor: grab; touch-action: pan-x pan-y;
+}
+.section-slider .section-slider__track::-webkit-scrollbar { display: none; }
+.section-slider .section-slider__track.is-dragging { cursor: grabbing; scroll-snap-type: none; scroll-behavior: auto; user-select: none; }
+.section-slider .section-slider__track > li {
+    flex: 0 0 calc((100% - (var(--slider-cols) - 1) * var(--slider-gap)) / var(--slider-cols));
+    min-width: 0; scroll-snap-align: start;
+}
+.section-slider.is-static .section-slider__controls { display: none; }
+.section-slider.is-static .section-slider__track { cursor: default; }
+
+@media (min-width: 680px) { .section-slider { --slider-cols: 2; --slider-gap: 24px; } }
+@media (min-width: 1020px) { .section-slider { --slider-cols: 3; } }
+
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
