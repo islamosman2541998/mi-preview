@@ -295,6 +295,7 @@ a.hero__card-row:hover { color: var(--c-primary); }
 @media (min-width: 680px) { .works--rail .section-slider { --slider-cols: 2; } }
 @media (min-width: 1020px) { .works--rail .section-slider { --slider-cols: 3; } }
 .works--grid .works__list { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+@media (min-width: 760px) { .works--grid .works__list--two { grid-template-columns: repeat(2, 1fr); } .works__list--two .work { aspect-ratio: 4 / 3; } }
 .work {
     position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end;
     aspect-ratio: 4 / 5; border-radius: var(--r-lg); background: var(--c-primary); color: #fff;
@@ -316,15 +317,11 @@ a.hero__card-row:hover { color: var(--c-primary); }
 
 /* ---------------------------------------------------------- gallery */
 
-.mosaic { display: grid; gap: 14px; grid-template-columns: repeat(2, 1fr); grid-auto-rows: clamp(150px, 22vw, 240px); }
-@media (min-width: 760px) {
-    .mosaic { grid-template-columns: repeat(4, 1fr); gap: 18px; }
-    .mosaic--4 .mosaic__item:nth-child(6n + 1) { grid-row: span 2; }
-    .mosaic--4 .mosaic__item:nth-child(6n + 4) { grid-column: span 2; }
-    .mosaic--3 { grid-template-columns: 2fr 1fr 1fr; grid-auto-rows: clamp(200px, 26vw, 320px); }
-    .mosaic--2 { grid-template-columns: 1fr 1fr; grid-auto-rows: clamp(240px, 30vw, 380px); }
-    .mosaic--1 { grid-template-columns: 1fr; grid-auto-rows: clamp(260px, 36vw, 460px); }
-}
+.mosaic { display: grid; gap: 14px; grid-template-columns: repeat(2, 1fr); grid-auto-rows: clamp(150px, 40vw, 240px); grid-auto-flow: dense; }
+@media (min-width: 760px) { .mosaic { grid-template-columns: repeat(4, 1fr); gap: 18px; grid-auto-rows: clamp(170px, 20vw, 260px); } }
+.mo--lead { grid-column: span 2; grid-row: span 2; }
+.mo--m2 { grid-column: span 2; }
+@media (min-width: 760px) { .mo--m2 { grid-column: auto; } .mo--w2 { grid-column: span 2; } .mo--w4 { grid-column: 1 / -1; } .mo--lead { grid-column: span 2; } }
 .mosaic__item { position: relative; display: block; overflow: hidden; border-radius: var(--r-md); background: var(--soft); }
 .mosaic__item:first-child { border-top-left-radius: 120px; }
 [dir="rtl"] .mosaic__item:first-child { border-top-left-radius: var(--r-md); border-top-right-radius: 120px; }

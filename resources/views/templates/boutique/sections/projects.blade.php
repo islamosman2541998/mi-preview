@@ -23,7 +23,7 @@
 
         <div class="{{ $variant === 'rail' ? 'section-slider' : '' }}" @if ($variant === 'rail') data-carousel @endif>
             @if ($variant === 'rail')@include('preview.partials.section-slider-controls')@endif
-            <ul class="works__list {{ $variant === 'rail' ? 'section-slider__track' : '' }}" @if ($variant === 'rail') data-carousel-track tabindex="0" aria-label="{{ $c['title'] ?? '' }}" @endif>
+            <ul class="works__list {{ $variant === 'rail' ? 'section-slider__track' : '' }} {{ $variant !== 'rail' && count($items) % 3 !== 0 && count($items) % 2 === 0 ? 'works__list--two' : '' }}" @if ($variant === 'rail') data-carousel-track tabindex="0" aria-label="{{ $c['title'] ?? '' }}" @endif>
                 @foreach ($items as $item)
                     <li class="work {{ $item['img'] ? '' : 'work--plain' }}" data-category="{{ $item['category'] ?? '' }}" @if ($variant !== 'rail') data-reveal @endif>
                         @if ($item['img'])

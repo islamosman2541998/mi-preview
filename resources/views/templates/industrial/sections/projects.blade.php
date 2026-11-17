@@ -43,7 +43,7 @@
                 </div>
             @endif
 
-            <ul class="pgrid">
+            <ul class="pgrid {{ count($items) % 3 !== 0 && count($items) % 2 === 0 ? 'pgrid--two' : '' }}">
                 @foreach ($items as $item)
                     <li class="pcard" data-category="{{ $item['category'] ?? '' }}" data-reveal style="--rd: {{ ($loop->index % 3) * 0.08 }}s">
                         <div class="pcard__visual {{ $item['img'] ? '' : 'pcard__visual--plain' }}">
