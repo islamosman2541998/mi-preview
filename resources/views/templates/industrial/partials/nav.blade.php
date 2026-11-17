@@ -1,5 +1,5 @@
 @php
-    $logo = \App\Support\MediaUrl::for($site->logo_path ?: $site->logo_nobg_path);
+    $logo = \App\Support\MediaUrl::for($site->logo_nobg_path);
     $currentPath = $page->path($locale);
     $items = $site->menu->reject->is_cta;
     $ctas = $site->menu->filter->is_cta;

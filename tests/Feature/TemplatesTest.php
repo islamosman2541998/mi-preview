@@ -105,7 +105,7 @@ class TemplatesTest extends TestCase
             ->assertOk()
             ->assertSee('<meta name="robots" content="noindex,nofollow">', false)
             ->assertSee('data-preloader', false)
-            ->assertSee('data-track-label="demo_bar"', false)
+            ->assertDontSee('data-track-label="demo_bar"', false)
             ->assertSee('class="wa-float"', false)
             ->assertSee('data-track="whatsapp"', false)
             ->assertSee('data-track="phone"', false)
@@ -117,6 +117,27 @@ class TemplatesTest extends TestCase
             ->assertSee('/js/t.js', false)
             ->assertSee('href="/en"', false)
             ->assertSee('booking_option', false);
+    }
+
+    #[Test]
+    public function industrial_template_uses_the_transparent_logo_and_sliders(): void
+    {
+        $this->kitchenSink('industrial', [
+            'logo_path' => 'https://images.example.test/logo-full.jpg',
+            'logo_nobg_path' => 'https://images.example.test/logo-transparent.png',
+        ]);
+
+        $html = $this->get('http://acme.localhost/')
+            ->assertOk()
+            ->assertSee('https://images.example.test/logo-transparent.png', false)
+            ->assertDontSee('https://images.example.test/logo-full.jpg', false)
+            ->assertSee('data-carousel', false)
+            ->assertSee('data-carousel-track', false)
+            ->assertSee('data-carousel-prev', false)
+            ->assertSee('data-carousel-next', false)
+            ->getContent();
+
+        $this->assertGreaterThanOrEqual(2, substr_count($html, 'data-carousel'));
     }
 
     #[Test]

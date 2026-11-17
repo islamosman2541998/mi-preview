@@ -12,10 +12,12 @@ use App\Models\Site;
 use App\Rules\SiteSlug;
 use App\Services\RemoveBg;
 use App\Services\SiteBuilder;
+use App\Services\SocialProfileImporter;
 use App\Services\Stock\StockPhotos;
 use App\Support\Palette;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -40,6 +42,26 @@ use Illuminate\Support\Str;
  */
 class SiteForm
 {
+    public static function socialImport(): array
+    {
+        return [
+            TextInput::make('source_url')
+                ->label('رابط صفحة Facebook أو حساب Instagram')
+                ->placeholder('https://www.instagram.com/company')
+                ->helperText(fn () => app(SocialProfileImporter::class)->configured()
+                    ? 'الصق رابط الصفحة مباشرة ثم اضغط استيراد. يمكنك تخطي هذه الخطوة وإدخال البيانات يدويًا.'
+                    : 'أضف META_ACCESS_TOKEN في ملف .env لتفعيل الاستيراد، أو تخطَّ الخطوة وأدخل البيانات يدويًا.')
+                ->url()
+                ->maxLength(2048)
+                ->extraInputAttributes(['dir' => 'ltr']),
+            Hidden::make('source_data'),
+            ViewField::make('social_import_tools')
+                ->hiddenLabel()
+                ->view('filament.forms.social-import')
+                ->dehydrated(false),
+        ];
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([

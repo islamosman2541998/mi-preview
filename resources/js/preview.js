@@ -1,5 +1,5 @@
 /*
- * Shared preview behaviour (all templates): preloader, demo bar, mobile nav,
+ * Shared preview behaviour (all templates): preloader, mobile nav,
  * dropdowns. Tracking lives separately in public/js/t.js.
  */
 (() => {
@@ -28,12 +28,6 @@
     } else {
         ready();
     }
-
-    // ------------------------------------------------------------ demo bar
-    document.querySelector('[data-demo-bar-close]')?.addEventListener('click', () => {
-        html.classList.add('db-hidden');
-        remember('mi_db');
-    });
 
     // ---------------------------------------------------------- mobile nav
     const masthead = document.querySelector('[data-masthead]');
@@ -124,6 +118,124 @@
         }), { threshold: 0.6 });
         counters.forEach((el) => io.observe(el));
     }
+
+    // ------------------------------------------------------ section sliders
+    document.querySelectorAll('[data-carousel]').forEach((carousel) => {
+        const track = carousel.querySelector('[data-carousel-track]');
+        const items = track ? [...track.children] : [];
+        const previous = carousel.querySelector('[data-carousel-prev]');
+        const next = carousel.querySelector('[data-carousel-next]');
+        if (!track || items.length < 2) {
+            carousel.classList.add('is-static');
+            return;
+        }
+
+        let current = 0;
+        let timer = null;
+        let inView = !canObserve;
+        let dragging = false;
+        let dragged = false;
+        let dragX = 0;
+        let dragScroll = 0;
+
+        const visibleCount = () => Math.max(1, Number.parseInt(getComputedStyle(carousel).getPropertyValue('--slider-cols'), 10) || 1);
+        const maxStart = () => Math.max(0, items.length - visibleCount());
+        const canSlide = () => maxStart() > 0;
+
+        const nearestIndex = () => {
+            const edge = track.getBoundingClientRect();
+            const rtl = getComputedStyle(track).direction === 'rtl';
+            let best = 0;
+            let distance = Infinity;
+            items.forEach((item, index) => {
+                const rect = item.getBoundingClientRect();
+                const nextDistance = Math.abs(rtl ? edge.right - rect.right : rect.left - edge.left);
+                if (nextDistance < distance) {
+                    distance = nextDistance;
+                    best = index;
+                }
+            });
+            return Math.min(best, maxStart());
+        };
+
+        const goTo = (index) => {
+            const limit = maxStart();
+            current = index > limit ? 0 : index < 0 ? limit : index;
+            items[current].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest', inline: 'start' });
+        };
+
+        const stop = () => {
+            if (timer) window.clearInterval(timer);
+            timer = null;
+        };
+        const start = () => {
+            stop();
+            if (!reduceMotion && inView && canSlide() && !document.hidden) {
+                timer = window.setInterval(() => goTo(nearestIndex() + 1), 3600);
+            }
+        };
+
+        previous?.addEventListener('click', () => { goTo(nearestIndex() - 1); start(); });
+        next?.addEventListener('click', () => { goTo(nearestIndex() + 1); start(); });
+        carousel.addEventListener('mouseenter', stop);
+        carousel.addEventListener('mouseleave', start);
+        carousel.addEventListener('focusin', stop);
+        carousel.addEventListener('focusout', start);
+
+        track.addEventListener('pointerdown', (event) => {
+            if (event.pointerType !== 'mouse' || event.button !== 0 || !canSlide()) return;
+            dragging = true;
+            dragged = false;
+            dragX = event.clientX;
+            dragScroll = track.scrollLeft;
+            track.classList.add('is-dragging');
+            track.setPointerCapture(event.pointerId);
+            stop();
+        });
+        track.addEventListener('pointermove', (event) => {
+            if (!dragging) return;
+            const distance = event.clientX - dragX;
+            if (Math.abs(distance) > 5) dragged = true;
+            track.scrollLeft = dragScroll - distance;
+        });
+        const finishDrag = () => {
+            if (!dragging) return;
+            dragging = false;
+            track.classList.remove('is-dragging');
+            current = nearestIndex();
+            goTo(current);
+            start();
+        };
+        track.addEventListener('pointerup', finishDrag);
+        track.addEventListener('pointercancel', finishDrag);
+        track.addEventListener('click', (event) => {
+            if (!dragged) return;
+            event.preventDefault();
+            event.stopPropagation();
+            dragged = false;
+        }, true);
+
+        const update = () => {
+            carousel.style.removeProperty('--slider-cols');
+            const responsiveColumns = Math.max(1, Number.parseInt(getComputedStyle(carousel).getPropertyValue('--slider-cols'), 10) || 1);
+            carousel.style.setProperty('--slider-cols', String(Math.min(items.length, responsiveColumns)));
+            carousel.classList.toggle('is-static', !canSlide());
+            current = Math.min(nearestIndex(), maxStart());
+            start();
+        };
+        window.addEventListener('resize', update, { passive: true });
+        document.addEventListener('visibilitychange', start);
+
+        if (canObserve) {
+            const observer = new IntersectionObserver(([entry]) => {
+                inView = entry.isIntersecting;
+                if (inView) start(); else stop();
+            }, { threshold: 0.2 });
+            observer.observe(carousel);
+        }
+
+        update();
+    });
 
     // -------------------------------------------------------- category filter
     document.querySelectorAll('[data-filter-scope]').forEach((scope) => {

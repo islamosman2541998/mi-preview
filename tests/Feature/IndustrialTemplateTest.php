@@ -71,7 +71,7 @@ class IndustrialTemplateTest extends TestCase
     }
 
     #[Test]
-    public function chrome_is_present_preloader_demo_bar_whatsapp_and_tracking_hooks(): void
+    public function chrome_is_present_preloader_whatsapp_and_tracking_hooks(): void
     {
         config(['preview.brand_whatsapp' => '+20 111 222 3333']);
         $this->kitchenSink();
@@ -79,10 +79,8 @@ class IndustrialTemplateTest extends TestCase
         $this->get('http://acme.localhost/')
             ->assertOk()
             ->assertSee('data-preloader', false)
-            ->assertSee('نموذج تجريبي لموقع', false)
-            ->assertSee('أريد هذا الموقع')
-            ->assertSee('https://wa.me/201112223333?text=', false)
-            ->assertSee('data-track-label="demo_bar"', false)
+            ->assertDontSee('نموذج تجريبي لموقع', false)
+            ->assertDontSee('data-track-label="demo_bar"', false)
             ->assertSee('class="wa-float"', false)
             ->assertSee('data-track="whatsapp"', false)
             ->assertSee('data-track="phone"', false)
@@ -92,12 +90,14 @@ class IndustrialTemplateTest extends TestCase
     }
 
     #[Test]
-    public function demo_bar_cta_is_hidden_without_agency_number(): void
+    public function previews_carry_no_agency_demo_bar(): void
     {
-        config(['preview.brand_whatsapp' => null]);
+        config(['preview.brand_whatsapp' => '+20 111 222 3333']);
         $this->kitchenSink();
 
-        $this->get('http://acme.localhost/')->assertOk()->assertSee('نموذج تجريبي')->assertDontSee('data-track-label="demo_bar"', false);
+        $this->get('http://acme.localhost/')->assertOk()
+            ->assertDontSee('class="demo-bar"', false)
+            ->assertDontSee('https://wa.me/201112223333', false);
     }
 
     #[Test]

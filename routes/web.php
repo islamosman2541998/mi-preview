@@ -17,6 +17,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::domain(config('preview.admin_host'))
+    ->name('legal.')
+    ->group(function () {
+        Route::view('/privacy-policy', 'legal.privacy')->name('privacy');
+        Route::view('/terms', 'legal.terms')->name('terms');
+        Route::view('/data-deletion', 'legal.data-deletion')->name('data-deletion');
+    });
+
+Route::domain(config('preview.admin_host'))
     ->middleware('auth')
     ->name('admin.')
     ->group(function () {

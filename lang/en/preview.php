@@ -46,6 +46,10 @@ return [
     'all_services' => 'All services',
     'all_projects' => 'All projects',
     'services' => 'Services',
+    'slider' => [
+        'previous' => 'Previous items',
+        'next' => 'Next items',
+    ],
     'request_service' => 'Request this service',
     'service_greeting' => 'Hello, I would like to ask about: :service',
     'order' => 'Order now',

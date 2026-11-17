@@ -5,8 +5,10 @@ namespace App\Filament\Resources\Sites\Pages;
 use App\Ai\AiException;
 use App\Ai\AiRuns;
 use App\Filament\Resources\Sites\Concerns\HandlesLogoTools;
+use App\Filament\Resources\Sites\Concerns\HandlesSocialImport;
 use App\Filament\Resources\Sites\Schemas\SiteForm;
 use App\Filament\Resources\Sites\SiteResource;
+use App\Jobs\ImportSocialMedia;
 use App\Services\SiteBuilder;
 use App\Services\Stock\StockPhotos;
 use Filament\Resources\Pages\CreateRecord;
@@ -17,6 +19,7 @@ use Filament\Schemas\Components\Wizard\Step;
 class CreateSite extends CreateRecord
 {
     use HandlesLogoTools;
+    use HandlesSocialImport;
     use HasWizard;
 
     protected static string $resource = SiteResource::class;
@@ -28,6 +31,7 @@ class CreateSite extends CreateRecord
     protected function getSteps(): array
     {
         return [
+            Step::make('الاستيراد من السوشيال')->icon('heroicon-o-link')->schema(SiteForm::socialImport()),
             Step::make('البيانات الأساسية')->icon('heroicon-o-building-office')->schema(SiteForm::basic()),
             Step::make('التواصل')->icon('heroicon-o-phone')->schema(SiteForm::contact()),
             Step::make('الشعار والألوان')->icon('heroicon-o-swatch')->schema(SiteForm::branding()),
@@ -54,6 +58,10 @@ class CreateSite extends CreateRecord
         $this->buildPages
             ? $builder->build($this->record)
             : $builder->generateNav($this->record);
+
+        if ($this->buildPages && filled($this->record->source_data)) {
+            ImportSocialMedia::dispatch($this->record->id);
+        }
 
         if ($this->generateContent) {
             try {
