@@ -55,9 +55,7 @@ html { scroll-padding-top: 84px; }
 [dir="rtl"] .block-btn:hover { transform: translate(2px, -2px); box-shadow: -4px 4px 0 var(--ink); }
 .block-btn--lg { padding: 15px 28px; font-size: 1.05rem; }
 .block-btn--outline { background: transparent; color: inherit; border-color: currentColor; }
-.block-btn--outline:hover { background: currentColor; box-shadow: none; transform: none; }
-.block-btn--outline:hover > * , .block-btn--outline:hover { color: inherit; }
-.block-btn--outline:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
+.block-btn--outline:hover { background: color-mix(in srgb, currentColor 14%, transparent); box-shadow: none; transform: none; }
 .block-btn--ink { background: var(--ink); color: var(--c-paper); }
 .block-btn--ink:hover { background: var(--c-primary-deep); color: var(--c-on-primary-deep); box-shadow: 4px 4px 0 var(--c-secondary); }
 [dir="rtl"] .block-btn--ink:hover { box-shadow: -4px 4px 0 var(--c-secondary); }
