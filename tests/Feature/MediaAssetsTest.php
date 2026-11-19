@@ -453,6 +453,40 @@ class MediaAssetsTest extends TestCase
     }
 
     #[Test]
+    public function logo_upload_accepts_any_image_mime_type(): void
+    {
+        $this->admin();
+        $site = Site::factory()->create();
+
+        $lw = Livewire::test(EditSite::class, ['record' => $site->getRouteKey()])
+            ->set('data.logo_path', [UploadedFile::fake()->image('brand.gif', 120, 60)])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $path = $site->fresh()->logo_path;
+
+        $this->assertStringEndsWith('.gif', $path);
+        Storage::disk('public')->assertExists($path);
+    }
+
+    #[Test]
+    public function background_free_logo_upload_accepts_any_image_mime_type(): void
+    {
+        $this->admin();
+        $site = Site::factory()->create();
+
+        Livewire::test(EditSite::class, ['record' => $site->getRouteKey()])
+            ->set('data.logo_nobg_path', [UploadedFile::fake()->image('brand.gif', 120, 60)])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $path = $site->fresh()->logo_nobg_path;
+
+        $this->assertStringEndsWith('.gif', $path);
+        Storage::disk('public')->assertExists($path);
+    }
+
+    #[Test]
     public function browser_removed_background_is_stored_and_set_on_the_field(): void
     {
         $this->admin();

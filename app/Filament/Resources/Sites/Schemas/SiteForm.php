@@ -159,9 +159,8 @@ class SiteForm
             Grid::make(2)->schema([
                 FileUpload::make('logo_path')
                     ->label('الشعار')
-                    ->helperText('PNG أو JPG أو WebP. عند إنشاء موقع جديد تُستخرج الألوان منه تلقائيًا.')
+                    ->helperText('ارفع الشعار بأي صيغة صورة. عند إنشاء موقع جديد تُستخرج الألوان منه تلقائيًا.')
                     ->image()
-                    ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
                     ->disk('public')->directory('sites/logos')->visibility('public')
                     ->maxSize(2048)
                     ->imagePreviewHeight('100')
@@ -174,9 +173,8 @@ class SiteForm
                     }),
                 FileUpload::make('logo_nobg_path')
                     ->label('الشعار بدون خلفية')
-                    ->helperText('يظهر في شاشة التحميل. استخدم زر "إزالة الخلفية تلقائيًا" أو ارفع PNG شفاف.')
+                    ->helperText('يظهر في شاشة التحميل. استخدم زر "إزالة الخلفية تلقائيًا" أو ارفعه بأي صيغة صورة.')
                     ->image()
-                    ->acceptedFileTypes(['image/png', 'image/webp', 'image/svg+xml'])
                     ->disk('public')->directory('sites/logos')->visibility('public')
                     ->maxSize(2048)
                     ->imagePreviewHeight('100'),
