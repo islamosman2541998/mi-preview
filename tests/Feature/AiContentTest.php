@@ -644,9 +644,9 @@ class AiContentTest extends TestCase
         $run = $this->runNow($site, null, ['provider' => 'gemini']);
 
         $this->assertSame('gemini', $this->calls[0]['provider']);
-        $this->assertCount(2, $this->calls, 'Gemini gets small batches so it does not reject a complex response schema');
+        $this->assertCount(4, $this->calls, 'Gemini gets one-section batches so it does not reject a complex response schema');
         $variants = collect($this->calls)->flatMap(fn ($call) => $call['schema']['properties']['sections']['items']['anyOf']);
-        $this->assertTrue(collect($this->calls)->every(fn ($call) => count($call['schema']['properties']['sections']['items']['anyOf']) <= 2));
+        $this->assertTrue(collect($this->calls)->every(fn ($call) => count($call['schema']['properties']['sections']['items']['anyOf']) === 1));
         $this->assertEqualsCanonicalizing(['hero', 'about', 'projects', 'cta'], $variants->map(fn ($v) => $v['properties']['type']['const'])->all());
         $this->assertSame('gemini', $run->usage['provider']);
         $this->assertTrue($run->usage['free']);

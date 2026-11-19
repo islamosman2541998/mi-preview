@@ -92,6 +92,19 @@ class GeminiGeneratorTest extends TestCase
     }
 
     #[Test]
+    public function schema_adaptation_removes_constraints_that_overload_gemini(): void
+    {
+        $schema = GeminiGenerator::adapt(SectionSchema::response([SectionType::Services]));
+        $json = json_encode($schema);
+
+        $this->assertStringNotContainsString('"description":', $json);
+        $this->assertStringNotContainsString('minItems', $json);
+        $this->assertStringNotContainsString('maxItems', $json);
+        $this->assertStringNotContainsString('"crane"', $json, 'the large service icon enum is removed');
+        $this->assertStringContainsString('"services"', $json, 'the one-value section discriminator stays');
+    }
+
+    #[Test]
     public function safety_blocks_are_reported_in_arabic(): void
     {
         Http::fake(['*' => Http::response($this->reply('{"seo"', 'SAFETY'))]);

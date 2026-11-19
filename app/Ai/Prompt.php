@@ -30,6 +30,7 @@ Writing
 - Calls to action talk to the visitor plainly (e.g. "اطلب عرض سعر على واتساب" / "Get a quote on WhatsApp").
 - Make the site feel complete, not like a short demo. Derive distinct services, work categories, project examples, questions and testimonials from all available business/source material. Do not collapse a list to one item.
 - Treat social captions as evidence: turn repeated themes into service categories and use individual jobs/products as distinct portfolio entries without copying captions verbatim.
+- List sizes: services 6–9, projects 6–9, products 8–12, testimonials 4–6, FAQ 6–8, stats 4–5, certifications 3–5, client types 6–10, and about points 4–6. For a menu write 3–5 categories with 4–8 dishes in each.
 
 Output
 - Return exactly one entry in "sections" for every section listed in the request, with the same id and type, in the same order. Fill every field; use an empty string only where a field truly doesn't apply.

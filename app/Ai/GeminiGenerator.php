@@ -118,9 +118,20 @@ class GeminiGenerator implements TextGenerator
     /** Rewrite the schema for Gemini's JSON-schema subset. */
     public static function adapt(array $schema): array
     {
+        // These annotations are useful to the model but multiply the number of
+        // states in Gemini's schema compiler. The prompt carries the same rules.
+        unset($schema['description'], $schema['minItems'], $schema['maxItems']);
+
         if (array_key_exists('const', $schema)) {
             $schema['enum'] = [$schema['const']];
             unset($schema['const']);
+        }
+
+        // A large icon enum is another major source of schema-state explosion.
+        // Keep one-value discriminator enums; free-form values are normalised by
+        // ServiceIcons::resolve() before being rendered.
+        if (isset($schema['enum']) && is_array($schema['enum']) && count($schema['enum']) > 10) {
+            unset($schema['enum']);
         }
 
         foreach (['properties', 'items', 'anyOf'] as $key) {
