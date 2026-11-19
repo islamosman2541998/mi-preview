@@ -146,7 +146,7 @@ class GeminiGenerator implements TextGenerator
         throw new AiException(match (true) {
             str_contains($reason, 'API_KEY_INVALID') || str_contains($message, 'API key') || in_array($status, [401, 403], true) => 'مفتاح GEMINI_API_KEY غير صالح — راجع ملف ‎.env.',
             $status === 429 => 'وصلت لحد Gemini المجاني لهذه الدقيقة أو اليوم — حاول لاحقًا أو استخدم Claude.',
-            $status === 400 && stripos($message, 'schema') !== false => 'Gemini رفض هيكل الرد لأنه كبير — جرّب توليد صفحة واحدة في المرة.',
+            $status === 400 && stripos($message, 'schema') !== false => 'Gemini رفض هيكل الرد لهذه الدفعة — سيعمل التوليد بعد تحديث التطبيق الذي يقسّم الصفحة إلى دفعات أصغر.',
             $status >= 500 => 'خدمة Gemini مشغولة الآن، حاول مرة أخرى بعد قليل.',
             default => 'خطأ من Gemini: '.mb_substr($message ?: "HTTP {$status}", 0, 200),
         });

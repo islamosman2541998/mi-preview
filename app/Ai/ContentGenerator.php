@@ -68,8 +68,12 @@ class ContentGenerator
         // Keep each structured response comfortably below provider and shared-host
         // limits. Page boundaries also give the model a more coherent writing task.
         $batches = collect();
+        // Gemini rejects large response schemas even when the token limit is high.
+        // Two section variants keep its schema compiler comfortably below that limit;
+        // Claude can keep the larger page-sized batch and benefit from prompt caching.
+        $batchSize = $ai->narrowSchema() ? 2 : 8;
         foreach ($sections->groupBy('page_id') as $pageSections) {
-            foreach ($pageSections->chunk(8) as $chunk) {
+            foreach ($pageSections->chunk($batchSize) as $chunk) {
                 $batches->push($chunk->values());
             }
         }
