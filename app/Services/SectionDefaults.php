@@ -125,10 +125,16 @@ class SectionDefaults
 
             SectionType::Testimonials => [
                 'ar' => ['title' => 'آراء عملائنا', 'items' => [
-                    ['quote' => 'تجربة ممتازة والتزام واضح بالمواعيد والجودة.', 'name' => 'عميل', 'role' => ''],
+                    ['quote' => 'التزام واضح بالمواعيد والتفاصيل من بداية العمل حتى التسليم.', 'name' => 'أحمد م.', 'role' => 'عميل'],
+                    ['quote' => 'فهموا ما نحتاجه وقدموا اقتراحات عملية والنتيجة جاءت كما اتفقنا.', 'name' => 'محمود ع.', 'role' => 'صاحب مشروع'],
+                    ['quote' => 'التواصل كان سريعًا وكل مرحلة كانت واضحة وموثقة.', 'name' => 'سارة ح.', 'role' => 'مديرة تشغيل'],
+                    ['quote' => 'الجودة ثابتة والفريق تعامل مع ملاحظاتنا باهتمام.', 'name' => 'خالد س.', 'role' => 'مدير مشروع'],
                 ]],
                 'en' => ['title' => 'What our clients say', 'items' => [
-                    ['quote' => 'An excellent experience with clear commitment to quality and deadlines.', 'name' => 'Client', 'role' => ''],
+                    ['quote' => 'The team stayed on schedule and managed every detail clearly from kickoff through handover.', 'name' => 'Ahmed M.', 'role' => 'Client'],
+                    ['quote' => 'They understood the brief, offered practical options and delivered what we agreed.', 'name' => 'Mahmoud A.', 'role' => 'Business owner'],
+                    ['quote' => 'Communication was quick and every stage was clear and documented.', 'name' => 'Sara H.', 'role' => 'Operations manager'],
+                    ['quote' => 'Quality stayed consistent and the team handled our comments carefully.', 'name' => 'Khaled S.', 'role' => 'Project manager'],
                 ]],
             ],
 

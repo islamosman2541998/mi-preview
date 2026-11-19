@@ -7,14 +7,14 @@ use App\Services\SocialProfileImporter;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-/** Downloads imported post images after site creation so the admin request stays fast. */
+/** Downloads imported post images in the queue so the admin request stays fast. */
 class ImportSocialMedia implements ShouldQueue
 {
     use Queueable;
 
     public int $tries = 2;
 
-    public int $timeout = 300;
+    public int $timeout = 900;
 
     public function __construct(public int $siteId) {}
 

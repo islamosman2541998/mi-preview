@@ -29,10 +29,10 @@ class SiteBuilderTest extends TestCase
 
         app(SiteBuilder::class)->build($site);
 
-        $this->assertSame(['home', 'menu', 'contact'], $site->pages->pluck('slug')->all());
+        $this->assertSame(['home', 'about', 'menu', 'contact'], $site->pages->pluck('slug')->all());
         $this->assertTrue($site->homePage->is($site->pages->first()));
         $this->assertSame(
-            ['hero', 'about', 'menu', 'gallery', 'testimonials', 'cta'],
+            ['hero', 'about', 'menu', 'gallery', 'testimonials', 'faq', 'cta'],
             $site->homePage->sections->map(fn ($s) => $s->type->value)->all(),
         );
         $this->assertNotEmpty($site->homePage->sections->first()->contentFor('ar')['title']);
@@ -45,7 +45,7 @@ class SiteBuilderTest extends TestCase
 
         app(SiteBuilder::class)->build($site);
 
-        $this->assertSame(['home', 'contact'], $site->pages->pluck('slug')->all());
+        $this->assertSame(['home', 'about', 'services', 'contact'], $site->pages->pluck('slug')->all());
     }
 
     #[Test]
@@ -56,7 +56,7 @@ class SiteBuilderTest extends TestCase
         app(SiteBuilder::class)->build($site);
         $nav = $site->navItems;
 
-        $this->assertSame(['home', 'contact', null], $nav->pluck('target')->all());
+        $this->assertSame(['home', 'about', 'services', 'contact', null], $nav->pluck('target')->all());
         $cta = $nav->last();
         $this->assertTrue($cta->is_cta);
         $this->assertSame(NavItemType::Whatsapp, $cta->type);
@@ -66,7 +66,7 @@ class SiteBuilderTest extends TestCase
         // links follow the locale URL scheme; home links to "/"
         $this->assertSame('/', $nav[0]->href($site, Locale::Ar, 'home'));
         $this->assertSame('/en', $nav[0]->href($site, Locale::En, 'home'));
-        $this->assertSame('/en/contact', $nav[1]->href($site, Locale::En, 'home'));
+        $this->assertSame('/en/contact', $nav[3]->href($site, Locale::En, 'home'));
     }
 
     #[Test]

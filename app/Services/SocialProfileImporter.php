@@ -16,14 +16,12 @@ use Throwable;
 /** Imports business-owned public profile data through Meta's supported Graph APIs. */
 class SocialProfileImporter
 {
-    private const MAX_POSTS = 12;
-
     public function configured(): bool
     {
         return filled($this->accessToken());
     }
 
-    /** @return array{platform:string,url:string,username:string,name:?string,biography:?string,phone:?string,email:?string,website:?string,address:?string,profile_picture_url:?string,posts:list<array>,warnings?:list<string>} */
+    /** @return array{platform:string,url:string,username:string,name:?string,biography:?string,phone:?string,whatsapp:?string,email:?string,website:?string,address:?string,map_url:?string,profile_picture_url:?string,posts:list<array>,warnings?:list<string>} */
     public function fetch(string $url): array
     {
         ['platform' => $platform, 'username' => $username, 'url' => $canonical] = $this->parseUrl($url);
@@ -56,7 +54,7 @@ class SocialProfileImporter
         }
 
         $imported = [];
-        foreach (array_slice((array) ($profile['posts'] ?? []), 0, self::MAX_POSTS) as $post) {
+        foreach (array_slice((array) ($profile['posts'] ?? []), 0, $this->maxPosts()) as $post) {
             $url = $post['image_url'] ?? null;
             if (! filled($url)) {
                 continue;
@@ -91,6 +89,24 @@ class SocialProfileImporter
         }
 
         return count($imported);
+    }
+
+    /** Reuse already-downloaded business photos after the AI adds rows or sections. */
+    public function seedFromLibrary(Site $site): void
+    {
+        $media = $site->media()
+            ->whereIn('source', [MediaSource::Instagram->value, MediaSource::Facebook->value])
+            ->oldest('id')
+            ->get()
+            ->map(fn ($item) => [
+                'path' => $item->path,
+                'caption' => $this->cleanText($item->meta['caption'] ?? null, 1500),
+            ])
+            ->all();
+
+        if ($media) {
+            $this->seedSections($site, $media, withCaptions: false);
+        }
     }
 
     /** @return array{platform:string,username:string,url:string} */
@@ -179,7 +195,7 @@ class SocialProfileImporter
         try {
             $postsJson = $this->graph((string) ($json['id'] ?? $username).'/posts', [
                 'fields' => 'message,full_picture,created_time,permalink_url',
-                'limit' => self::MAX_POSTS,
+                'limit' => $this->maxPosts(),
             ], $pageToken);
             $posts = (array) ($postsJson['data'] ?? []);
         } catch (RuntimeException) {
@@ -221,7 +237,7 @@ class SocialProfileImporter
             throw new RuntimeException('لم نجد حساب Instagram احترافيًا مرتبطًا بالصفحة. اربطه بصفحة Facebook أو أضف META_INSTAGRAM_ACCOUNT_ID.');
         }
 
-        $discovery = "business_discovery.username({$username}){username,name,biography,website,profile_picture_url,media.limit(".self::MAX_POSTS.'){caption,media_type,media_url,thumbnail_url,permalink,timestamp}}';
+        $discovery = "business_discovery.username({$username}){username,name,biography,website,profile_picture_url,media.limit(".$this->maxPosts().'){caption,media_type,media_url,thumbnail_url,permalink,timestamp}}';
         try {
             $json = $this->graph($account, ['fields' => $discovery]);
         } catch (RuntimeException $exception) {
@@ -242,9 +258,11 @@ class SocialProfileImporter
             'name' => $profile['name'] ?? null,
             'biography' => $profile['biography'] ?? null,
             'phone' => null,
+            'whatsapp' => null,
             'email' => null,
             'website' => $profile['website'] ?? null,
             'address' => null,
+            'map_url' => null,
             'profile_picture_url' => $profile['profile_picture_url'] ?? null,
             'posts' => array_map(fn (array $post) => [
                 'caption' => $post['caption'] ?? null,
@@ -360,6 +378,7 @@ class SocialProfileImporter
 
     private function profile(array $profile): array
     {
+        $profile = $this->extractContactDetails($profile);
         $profile['name'] = $this->cleanText($profile['name'] ?? null, 120);
         $profile['biography'] = $this->cleanText($profile['biography'] ?? null, 2000);
         $profile['posts'] = array_values(array_filter(array_map(function (array $post) {
@@ -404,7 +423,7 @@ class SocialProfileImporter
     }
 
     /** @param list<array{path:string,caption:?string}> $media */
-    private function seedSections(Site $site, array $media): void
+    private function seedSections(Site $site, array $media, bool $withCaptions = true): void
     {
         $paths = array_column($media, 'path');
         $cursor = 0;
@@ -417,13 +436,19 @@ class SocialProfileImporter
                 $shared['image'] = $paths[0] ?? null;
             } elseif ($section->type === SectionType::About && blank($shared['image'] ?? null)) {
                 $shared['image'] = $paths[1] ?? $paths[0] ?? null;
+                $shared['image2'] ??= $paths[2] ?? null;
             } elseif ($section->type === SectionType::Gallery && empty($shared['images'] ?? [])) {
-                $shared['images'] = array_slice($paths, 0, 8);
-            } elseif (in_array($section->type, [SectionType::Services, SectionType::Projects, SectionType::Products], true)) {
+                $shared['images'] = array_slice($paths, 0, 16);
+            } elseif (in_array($section->type, [SectionType::Stats, SectionType::Faq, SectionType::Cta, SectionType::Booking], true)
+                && blank($shared['image'] ?? null)) {
+                $shared['image'] = $paths[$cursor++ % count($paths)];
+            } elseif (in_array($section->type, [SectionType::Services, SectionType::Projects, SectionType::Products, SectionType::Certifications], true)) {
                 foreach ((array) ($shared['items'] ?? []) as $i => $row) {
                     $item = $media[$cursor++ % count($media)];
                     $shared['items'][$i]['image'] = $row['image'] ?? $item['path'];
-                    if (filled($item['caption'])) {
+                    if ($withCaptions
+                        && in_array($section->type, [SectionType::Services, SectionType::Projects, SectionType::Products], true)
+                        && filled($item['caption'])) {
                         $content['ar']['items'][$i]['description'] = $item['caption'];
                         $content['en']['items'][$i]['description'] = $item['caption'];
                     }
@@ -433,6 +458,58 @@ class SocialProfileImporter
             $content['shared'] = $shared;
             $section->forceFill(['content' => $content])->save();
         }
+    }
+
+    private function maxPosts(): int
+    {
+        return max(12, min(60, (int) config('services.meta.max_posts', 36)));
+    }
+
+    /** Fill contact fields that Business Discovery omits by reading the public bio/captions. */
+    private function extractContactDetails(array $profile): array
+    {
+        $bio = (string) ($profile['biography'] ?? '');
+        $captions = array_map(fn (array $post): string => (string) ($post['caption'] ?? ''), array_slice((array) ($profile['posts'] ?? []), 0, $this->maxPosts()));
+        $website = (string) ($profile['website'] ?? '');
+        $text = implode("\n", array_filter([$bio, $website, ...$captions]));
+
+        if (blank($profile['email'] ?? null)
+            && preg_match('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/iu', $text, $match)) {
+            $profile['email'] = mb_strtolower($match[0]);
+        }
+
+        $whatsapp = null;
+        if (preg_match('~(?:wa\.me/|api\.whatsapp\.com/send\?phone=)(\+?\d{8,15})~iu', $text, $match)) {
+            $whatsapp = '+'.ltrim($match[1], '+');
+        }
+
+        $phones = [];
+        preg_match_all('/(?<!\d)(\+?\d[\d\s().\-]{7,}\d)(?!\d)/u', $text, $matches);
+        foreach ($matches[1] ?? [] as $candidate) {
+            $digits = preg_replace('/\D+/', '', $candidate);
+            if (strlen($digits) >= 9 && strlen($digits) <= 15) {
+                $phones[] = (str_starts_with(trim($candidate), '+') ? '+' : '').$digits;
+            }
+        }
+
+        $profile['phone'] = $profile['phone'] ?? ($phones[0] ?? null);
+        $profile['whatsapp'] = $profile['whatsapp'] ?? $whatsapp;
+
+        if (blank($profile['address'] ?? null)) {
+            foreach (preg_split('/\R/u', $bio) ?: [] as $line) {
+                if (preg_match('/(?:address|location|العنوان|الموقع|مقرنا|القاهرة|الرياض|جدة|دبي|أبوظبي)/iu', $line)) {
+                    $profile['address'] = $this->cleanText(preg_replace('/^(?:address|location|العنوان|الموقع|مقرنا)\s*[:\-]?\s*/iu', '', $line), 255);
+                    break;
+                }
+            }
+        }
+
+        if (blank($profile['map_url'] ?? null)
+            && preg_match('~https?://(?:maps\.app\.goo\.gl|(?:www\.)?google\.[^/]+/maps)/\S+~iu', $text, $match)) {
+            $profile['map_url'] = rtrim($match[0], '.,)');
+        }
+
+        return $profile;
     }
 
     private function cleanText(mixed $value, int $limit): ?string

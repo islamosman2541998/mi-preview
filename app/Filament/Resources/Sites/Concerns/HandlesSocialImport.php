@@ -50,10 +50,12 @@ trait HandlesSocialImport
         $this->data['company_name_en'] = $this->data['company_name_en'] ?: $name;
         $this->data['slug'] = $this->data['slug'] ?: Str::limit(Str::slug($name), 40, '');
         $this->data['short_description'] = $this->data['short_description'] ?: $profile['biography'];
-        $this->data['phone'] = $this->data['phone'] ?: $profile['phone'];
-        $this->data['email'] = $this->data['email'] ?: $profile['email'];
-        $this->data['address_ar'] = $this->data['address_ar'] ?: $profile['address'];
-        $this->data['address_en'] = $this->data['address_en'] ?: $profile['address'];
+        $this->data['phone'] = $profile['phone'] ?: $this->data['phone'];
+        $this->data['whatsapp'] = ($profile['whatsapp'] ?? null) ?: $this->data['whatsapp'];
+        $this->data['email'] = $profile['email'] ?: $this->data['email'];
+        $this->data['address_ar'] = $profile['address'] ?: $this->data['address_ar'];
+        $this->data['address_en'] = $profile['address'] ?: $this->data['address_en'];
+        $this->data['map_url'] = ($profile['map_url'] ?? null) ?: $this->data['map_url'];
         $this->data['socials'][$profile['platform']] = $profile['url'];
 
         if ($logo) {

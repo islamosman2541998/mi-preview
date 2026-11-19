@@ -66,6 +66,7 @@ class SiteForm
     {
         return $schema->components([
             Tabs::make('site')->tabs([
+                Tab::make('الاستيراد من السوشيال')->schema(self::socialImport()),
                 Tab::make('البيانات الأساسية')->schema(self::basic()),
                 Tab::make('التواصل')->schema(self::contact()),
                 Tab::make('الشعار والألوان')->schema(self::branding()),

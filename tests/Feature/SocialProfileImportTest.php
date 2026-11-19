@@ -6,6 +6,8 @@ use App\Ai\Prompt;
 use App\Enums\MediaSource;
 use App\Enums\SectionType;
 use App\Filament\Resources\Sites\Pages\CreateSite;
+use App\Filament\Resources\Sites\Pages\EditSite;
+use App\Jobs\ImportSocialMedia;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\SiteBuilder;
@@ -15,6 +17,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
@@ -67,6 +70,33 @@ class SocialProfileImportTest extends TestCase
         Http::assertSent(fn (Request $request) => str_contains($request->url(), '/v27.0/acme.controls')
             && $request->hasHeader('Authorization', 'Bearer meta-token'));
         $this->assertCount(1, Storage::disk('public')->allFiles('sites/logos'));
+    }
+
+    #[Test]
+    public function an_existing_site_can_reimport_social_data_and_queue_all_media(): void
+    {
+        Http::fake([
+            'graph.facebook.test/*/posts*' => Http::response(['data' => $this->facebookPayload()['posts']['data']]),
+            'graph.facebook.test/*' => Http::response($this->facebookPayload()),
+            'scontent.fbcdn.test/*' => Http::response('LOGO', 200, ['Content-Type' => 'image/jpeg']),
+        ]);
+        Queue::fake();
+
+        $admin = User::factory()->create();
+        $site = Site::factory()->create();
+        $this->actingAs($admin);
+        Filament::setCurrentPanel('admin');
+
+        Livewire::test(EditSite::class, ['record' => $site->getRouteKey()])
+            ->fillForm(['source_url' => 'https://facebook.com/acme.controls'])
+            ->call('importSocialProfile')
+            ->assertSet('data.phone', '+20 100 123 4567')
+            ->assertSet('data.email', 'hello@acme.test')
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertCount(2, $site->fresh()->source_data['posts']);
+        Queue::assertPushed(ImportSocialMedia::class, fn (ImportSocialMedia $job) => $job->siteId === $site->id);
     }
 
     #[Test]
@@ -212,7 +242,29 @@ class SocialProfileImportTest extends TestCase
         $this->assertSame('Spark Controls', $profile['name']);
         $this->assertSame('https://scontent.cdninstagram.test/thumb.jpg', $profile['posts'][0]['image_url']);
         Http::assertSent(fn (Request $request) => str_contains($request->url(), '/v27.0/17890001')
-            && str_contains((string) $request['fields'], 'business_discovery.username(sparkcontrols)'));
+            && str_contains((string) $request['fields'], 'business_discovery.username(sparkcontrols)')
+            && str_contains((string) $request['fields'], 'media.limit(36)'));
+    }
+
+    #[Test]
+    public function instagram_bio_prefills_contact_fields_missing_from_business_discovery(): void
+    {
+        Http::fake(['graph.facebook.test/*' => Http::response([
+            'business_discovery' => [
+                'username' => 'studio',
+                'name' => 'Studio',
+                'biography' => "Interior design\nالعنوان: التجمع الخامس، القاهرة\nhello@studio.test\nWhatsApp: https://wa.me/201001234567",
+                'website' => 'https://maps.app.goo.gl/example',
+                'media' => ['data' => []],
+            ],
+        ])]);
+
+        $profile = app(SocialProfileImporter::class)->fetch('https://instagram.com/studio');
+
+        $this->assertSame('hello@studio.test', $profile['email']);
+        $this->assertSame('+201001234567', $profile['whatsapp']);
+        $this->assertSame('التجمع الخامس، القاهرة', $profile['address']);
+        $this->assertSame('https://maps.app.goo.gl/example', $profile['map_url']);
     }
 
     #[Test]
@@ -296,6 +348,62 @@ class SocialProfileImportTest extends TestCase
         $prompt = Prompt::user($site, $site->sections()->with('page')->get(), null, false);
         $this->assertStringContainsString('Verified source material', $prompt);
         $this->assertStringContainsString('Factory control panel installation', $prompt);
+    }
+
+    #[Test]
+    public function more_than_twelve_social_posts_are_imported_and_given_to_the_ai(): void
+    {
+        Http::fake(['scontent.fbcdn.test/*' => Http::response('JPEG', 200, ['Content-Type' => 'image/jpeg'])]);
+        $posts = array_map(fn (int $i) => [
+            'caption' => "Distinct project caption {$i}",
+            'image_url' => "https://scontent.fbcdn.test/project-{$i}.jpg",
+            'permalink' => "https://facebook.com/acme/posts/{$i}",
+            'published_at' => '2026-01-01T10:00:00+0000',
+        ], range(1, 20));
+        $site = Site::factory()->create(['source_data' => $this->facebookProfile() + ['posts' => $posts]]);
+        // Array union keeps the original posts key, so set the richer list explicitly.
+        $source = $site->source_data;
+        $source['posts'] = $posts;
+        $site->update(['source_data' => $source]);
+        app(SiteBuilder::class)->build($site);
+
+        $this->assertSame(20, app(SocialProfileImporter::class)->importMediaAndSeed($site));
+        $this->assertSame(20, $site->media()->where('source', MediaSource::Facebook)->count());
+
+        $prompt = Prompt::user($site->fresh(), $site->sections()->with('page')->get(), null, false);
+        $this->assertStringContainsString('Distinct project caption 20', $prompt);
+    }
+
+    #[Test]
+    public function downloaded_social_photos_fill_every_generated_item_and_large_galleries(): void
+    {
+        $site = Site::factory()->create(['source_data' => [
+            'platform' => 'facebook',
+            'posts' => array_fill(0, 8, ['caption' => 'Project', 'image_url' => 'https://scontent.fbcdn.test/project.jpg']),
+        ]]);
+        app(SiteBuilder::class)->build($site);
+
+        foreach (range(1, 18) as $i) {
+            $site->media()->create([
+                'path' => "sites/{$site->id}/social/{$i}.jpg",
+                'source' => MediaSource::Facebook,
+                'meta' => ['caption' => "Project {$i}"],
+            ]);
+        }
+
+        $services = $site->sections()->where('type', SectionType::Services)->firstOrFail();
+        $content = $services->content;
+        $content['ar']['items'] = $content['en']['items'] = array_fill(0, 8, ['title' => 'x', 'description' => 'x']);
+        $content['shared']['items'] = array_fill(0, 8, ['image' => null, 'icon' => null]);
+        $services->update(['content' => $content]);
+
+        app(SocialProfileImporter::class)->seedFromLibrary($site);
+
+        $images = collect($services->fresh()->content['shared']['items'])->pluck('image')->filter();
+        $gallery = $site->sections()->where('type', SectionType::Gallery)->firstOrFail();
+        $this->assertCount(8, $images);
+        $this->assertCount(8, $images->unique());
+        $this->assertCount(16, $gallery->fresh()->content['shared']['images']);
     }
 
     /** MySQL rejects values longer than the varchar(255) alt / credit columns (SQLite does not). */

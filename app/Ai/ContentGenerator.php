@@ -7,6 +7,9 @@ use App\Filament\Support\SectionFields;
 use App\Models\AiRun;
 use App\Models\Section;
 use App\Models\Site;
+use App\Services\SiteBuilder;
+use App\Services\SiteStructurePlanner;
+use App\Services\SocialProfileImporter;
 use App\Services\Stock\StockPhotos;
 use App\Services\Stock\StockProvider;
 use App\Support\ServiceIcons;
@@ -16,21 +19,35 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Runs one AiRun: one structured generation call for the requested sections (the
- * section list comes from the site's pages — built from the industry blueprint —
- * never from the AI), then applies the text, then optionally fills empty image
- * fields from stock photos using the queries the model wrote.
+ * Runs one AiRun: the source-aware planner first expands a whole site where useful,
+ * then page-sized structured generation calls write the requested sections. Imported
+ * business photos are reused before empty image slots fall back to stock photos.
  */
 class ContentGenerator
 {
     /** Rough JSON size per section, for the progress bar while streaming. */
     private const CHARS_PER_SECTION = 2200;
 
-    public function __construct(private AiProviders $providers, private StockPhotos $stock) {}
+    public function __construct(
+        private AiProviders $providers,
+        private StockPhotos $stock,
+        private SiteStructurePlanner $planner,
+        private SiteBuilder $builder,
+        private SocialProfileImporter $social,
+    ) {}
 
     public function run(AiRun $run): void
     {
         $site = $run->site()->with('industry')->firstOrFail();
+
+        if ($run->isWholeSite() && filled($site->source_data)) {
+            $run->stage('يحلل نشاط الشركة ومحتوى السوشيال لتخطيط الصفحات…', 2);
+            if ($this->planner->enrich($site)) {
+                $this->builder->generateNav($site);
+            }
+            $site->refresh()->load('industry');
+        }
+
         $sections = $this->sections($site, $run->section_ids);
 
         if ($sections->isEmpty()) {
@@ -43,24 +60,64 @@ class ContentGenerator
         $rewrite = ! $run->isWholeSite();
         $expected = max(1, $sections->count() * self::CHARS_PER_SECTION);
         $lastWrite = 0.0;
+        $processed = $inputTokens = $outputTokens = 0;
+        $model = $ai->key();
+        $fellBack = false;
+        $written = [];
 
-        $result = $ai->generate(
-            Prompt::SYSTEM,
-            Prompt::user($site, $sections, $run->options['instructions'] ?? null, $rewrite),
-            $ai->narrowSchema() ? SectionSchema::response($sections->pluck('type')->all()) : SectionSchema::response(),
-            function (int $chars, bool $writing) use ($run, $expected, &$lastWrite) {
-                if (microtime(true) - $lastWrite < 2.5) {
-                    return; // throttle DB writes
-                }
-                $lastWrite = microtime(true);
-                $writing
-                    ? $run->stage('يكتب المحتوى بالعربية والإنجليزية…', 10 + (int) min(70, 70 * $chars / $expected))
-                    : $run->stage('يكتب المحتوى بالعربية والإنجليزية… يستغرق عادة من دقيقة إلى ثلاث.', 15);
-            },
-        );
+        // Keep each structured response comfortably below provider and shared-host
+        // limits. Page boundaries also give the model a more coherent writing task.
+        $batches = collect();
+        foreach ($sections->groupBy('page_id') as $pageSections) {
+            foreach ($pageSections->chunk(8) as $chunk) {
+                $batches->push($chunk->values());
+            }
+        }
 
-        $run->stage('يحفظ المحتوى…', 82);
-        $written = $this->apply($site, $sections, $result->data, withSeo: ! $rewrite || ($run->options['seo'] ?? false));
+        foreach ($batches as $batchIndex => $batch) {
+            $pageLabel = $batch->first()?->page?->title_ar ?: 'الموقع';
+            $run->stage("يكتب محتوى صفحة {$pageLabel}…", 10 + (int) (70 * $processed / max(1, $sections->count())));
+            $baseChars = $processed * self::CHARS_PER_SECTION;
+
+            $result = $ai->generate(
+                Prompt::SYSTEM,
+                Prompt::user($site, $batch, $run->options['instructions'] ?? null, $rewrite),
+                $ai->narrowSchema() ? SectionSchema::response($batch->pluck('type')->all()) : SectionSchema::response(),
+                function (int $chars, bool $writing) use ($run, $expected, $baseChars, $pageLabel, &$lastWrite) {
+                    if (microtime(true) - $lastWrite < 2.5) {
+                        return; // throttle DB writes
+                    }
+                    $lastWrite = microtime(true);
+                    $progress = 10 + (int) min(70, 70 * ($baseChars + $chars) / $expected);
+                    $run->stage($writing
+                        ? "يكتب محتوى صفحة {$pageLabel} بالعربية والإنجليزية…"
+                        : "يجهّز محتوى صفحة {$pageLabel}…", $progress);
+                },
+            );
+
+            $written += $this->apply(
+                $site,
+                $batch,
+                $result->data,
+                withSeo: $batchIndex === 0 && (! $rewrite || ($run->options['seo'] ?? false)),
+            );
+            $processed += $batch->count();
+            $inputTokens += $result->inputTokens;
+            $outputTokens += $result->outputTokens;
+            $model = $result->model;
+            $fellBack = $fellBack || $result->fellBack;
+        }
+
+        $result = new GenerationResult([], $model, $inputTokens, $outputTokens, $fellBack);
+        $run->stage('يحفظ المحتوى ويوزع الصور…', 82);
+
+        // Prefer the business's own imported photos before filling remaining gaps
+        // from stock providers. This also covers rows the AI added to a section.
+        $this->social->seedFromLibrary($site);
+        foreach ($written as &$row) {
+            $row['section']->refresh();
+        }
+        unset($row);
 
         $warnings = [];
         if (($run->options['fill_images'] ?? false) && ($provider = $this->provider())) {

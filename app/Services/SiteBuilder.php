@@ -39,9 +39,10 @@ class SiteBuilder
             throw new LogicException("Site [{$site->slug}] already has pages.");
         }
 
+        $adaptive = $blueprint === null;
         $blueprint ??= $site->industry?->sections_blueprint ?: self::DEFAULT_BLUEPRINT;
 
-        DB::transaction(function () use ($site, $blueprint, $content) {
+        DB::transaction(function () use ($site, $blueprint, $content, $adaptive) {
             $pages = $blueprint['pages'] ?? [];
             $hasHome = collect($pages)->contains(fn ($p) => ! empty($p['is_home']));
 
@@ -55,6 +56,12 @@ class SiteBuilder
                 ]);
 
                 $this->buildSections($site, $page, $def['sections'] ?? [], $content);
+            }
+
+            // The industry provides the baseline; available business/social data decides
+            // which extra pages and sections make the result feel like a complete site.
+            if ($adaptive) {
+                app(SiteStructurePlanner::class)->enrich($site);
             }
 
             $this->generateNav($site);

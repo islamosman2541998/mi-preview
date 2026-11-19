@@ -28,6 +28,8 @@ Writing
 - Use only the facts given. Where something is unknown (exact numbers, founding year, project names), write plausible, modest, believable details typical for a business of this kind and size. Never invent awards, certifications from named bodies other than common standards relevant to the trade, real client brand names, or real people's names.
 - Testimonials: first name + last-name initial, generic role. Client lists: generic client types, not brand names.
 - Calls to action talk to the visitor plainly (e.g. "اطلب عرض سعر على واتساب" / "Get a quote on WhatsApp").
+- Make the site feel complete, not like a short demo. Derive distinct services, work categories, project examples, questions and testimonials from all available business/source material. Do not collapse a list to one item.
+- Treat social captions as evidence: turn repeated themes into service categories and use individual jobs/products as distinct portfolio entries without copying captions verbatim.
 
 Output
 - Return exactly one entry in "sections" for every section listed in the request, with the same id and type, in the same order. Fill every field; use an empty string only where a field truly doesn't apply.
@@ -58,8 +60,10 @@ TXT;
             'platform' => $source['platform'] ?? null,
             'profile_biography' => $source['biography'] ?? null,
             'website' => $source['website'] ?? null,
+            'post_count' => count((array) ($source['posts'] ?? [])),
+            'image_post_count' => collect($source['posts'] ?? [])->filter(fn ($post) => filled($post['image_url'] ?? null))->count(),
             'post_captions' => collect($source['posts'] ?? [])->pluck('caption')->filter()
-                ->take(8)->map(fn ($caption) => mb_substr((string) $caption, 0, 600))->values()->all(),
+                ->take(36)->map(fn ($caption) => mb_substr((string) $caption, 0, 700))->values()->all(),
         ]);
 
         $list = $sections->map(function (Section $s) use ($rewrite) {

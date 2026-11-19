@@ -111,7 +111,7 @@ class AdminTest extends TestCase
 
         $site = Site::where('slug', 'al-reef')->firstOrFail();
         $this->assertSame(SiteStatus::Draft, $site->status);
-        $this->assertSame(['home', 'menu', 'contact'], $site->pages->pluck('slug')->all());
+        $this->assertSame(['home', 'about', 'menu', 'contact'], $site->pages->pluck('slug')->all());
         $this->assertSame(['facebook' => 'https://facebook.com/alreef'], $site->socials);
         $this->assertTrue($site->navItems()->where('is_cta', true)->where('type', NavItemType::Whatsapp)->exists());
     }

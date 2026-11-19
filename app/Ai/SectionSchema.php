@@ -54,9 +54,20 @@ class SectionSchema
 
     /** Items per list the model should aim for. */
     private const COUNTS = [
-        'services' => '4–6', 'projects' => '4–6', 'stats' => '4', 'testimonials' => '3',
-        'faq' => '5–7', 'products' => '4–8', 'certifications' => '3–5', 'clients' => '6–8',
-        'about.points' => '3–4', 'booking.options' => '3–6', 'menu' => '3–4 categories × 3–5 dishes',
+        'services' => '6–9', 'projects' => '6–9', 'stats' => '4–5', 'testimonials' => '4–6',
+        'faq' => '6–8', 'products' => '8–12', 'certifications' => '3–5', 'clients' => '6–10',
+        'about.points' => '4–6', 'booking.options' => '4–8', 'menu' => '3–5 categories × 4–8 dishes',
+    ];
+
+    /** Hard bounds keep structured-output providers from returning token one-item lists. */
+    private const ITEM_LIMITS = [
+        'services' => [6, 9],
+        'projects' => [6, 9],
+        'stats' => [4, 5],
+        'testimonials' => [4, 6],
+        'faq' => [6, 8],
+        'products' => [8, 12],
+        'certifications' => [3, 5],
     ];
 
     /**
@@ -130,9 +141,12 @@ class SectionSchema
             if (self::hasItemImages($type)) {
                 $row['image_query'] = self::str('English stock-photo search for this item (2–5 concrete words).');
             }
+            $limits = self::ITEM_LIMITS[$t] ?? [3, 6];
             $props['items'] = [
                 'type' => 'array',
                 'description' => 'Aim for '.(self::COUNTS[$t] ?? '3–6').' items.',
+                'minItems' => $limits[0],
+                'maxItems' => $limits[1],
                 'items' => self::object(array_filter($row)),
             ];
         }
@@ -143,6 +157,8 @@ class SectionSchema
                 $lists[$key] = [
                     'type' => 'array',
                     'description' => 'Aim for '.(self::COUNTS["{$t}.{$key}"] ?? '3–5').' entries.',
+                    'minItems' => $t === 'about' && $key === 'points' ? 4 : 3,
+                    'maxItems' => $t === 'about' && $key === 'points' ? 6 : 8,
                     'items' => self::object(['ar' => self::str('Arabic.'), 'en' => self::str('English.')]),
                 ];
             }
@@ -153,6 +169,8 @@ class SectionSchema
             $props['logos'] = [
                 'type' => 'array',
                 'description' => 'Aim for '.self::COUNTS['clients'].' entries. Generic descriptions of client types, never real brand names.',
+                'minItems' => 6,
+                'maxItems' => 10,
                 'items' => self::object(['name' => self::str('e.g. "شركة تطوير عقاري" / "Real estate developer".')]),
             ];
         }
@@ -161,10 +179,12 @@ class SectionSchema
             $props['menu'] = [
                 'type' => 'array',
                 'description' => 'Aim for '.self::COUNTS['menu'].'.',
+                'minItems' => 3,
+                'maxItems' => 5,
                 'items' => self::object([
                     'name_ar' => self::str('Category name in Arabic.'),
                     'name_en' => self::str('Category name in English.'),
-                    'dishes' => ['type' => 'array', 'items' => self::object([
+                    'dishes' => ['type' => 'array', 'minItems' => 4, 'maxItems' => 8, 'items' => self::object([
                         'name_ar' => self::str('Arabic.'), 'name_en' => self::str('English.'),
                         'description_ar' => self::str('Arabic, max 12 words.'), 'description_en' => self::str('English, max 12 words.'),
                         'price' => self::num(self::HINTS['menu.price']),

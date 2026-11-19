@@ -216,6 +216,9 @@ class AiContentTest extends TestCase
         $this->assertArrayHasKey('image_query', SectionSchema::forType(SectionType::Projects)['properties']['items']['items']['properties']);
         $this->assertArrayNotHasKey('image_query', SectionSchema::forType(SectionType::Testimonials)['properties']);
         $this->assertSame('number', SectionSchema::forType(SectionType::Stats)['properties']['items']['items']['properties']['value']['type']);
+        $this->assertSame(4, SectionSchema::forType(SectionType::Testimonials)['properties']['items']['minItems']);
+        $this->assertSame(6, SectionSchema::forType(SectionType::Services)['properties']['items']['minItems']);
+        $this->assertSame(8, SectionSchema::forType(SectionType::Products)['properties']['items']['minItems']);
     }
 
     #[Test]
@@ -285,6 +288,31 @@ class AiContentTest extends TestCase
         $this->get('http://'.$site->host())->assertOk()
             ->assertSee('نبني ونسلّم في موعدنا')
             ->assertSee('<meta name="description" content="وصف">', false);
+    }
+
+    #[Test]
+    public function a_multi_page_site_is_generated_in_page_sized_batches(): void
+    {
+        $site = $this->site();
+        $aboutPage = Page::factory()->for($site)->create([
+            'slug' => 'about', 'title_ar' => 'من نحن', 'title_en' => 'About', 'sort' => 1,
+        ]);
+        foreach ([SectionType::Faq, SectionType::Testimonials] as $i => $type) {
+            Section::factory()->for($aboutPage)->create([
+                'type' => $type, 'sort' => $i, 'content' => ['ar' => ['title' => 'قديم'], 'en' => ['title' => 'Old']],
+            ]);
+        }
+        $this->reply = fn () => $this->replyFor($site);
+
+        $run = $this->runNow($site);
+
+        $this->assertSame(AiRun::DONE, $run->status);
+        $this->assertCount(2, $this->calls);
+        $this->assertStringContainsString('home (', $this->calls[0]['user']);
+        $this->assertStringContainsString('about (', $this->calls[1]['user']);
+        $this->assertSame(6, $run->usage['sections']);
+        $this->assertSame(6000, $run->usage['input_tokens']);
+        $this->assertSame(18000, $run->usage['output_tokens']);
     }
 
     #[Test]

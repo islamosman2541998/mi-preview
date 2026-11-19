@@ -66,6 +66,7 @@ return [
         'instagram_account_id' => env('META_INSTAGRAM_ACCOUNT_ID'),
         'version' => env('META_GRAPH_VERSION', 'v27.0'),
         'base_url' => env('META_GRAPH_BASE_URL', 'https://graph.facebook.com'),
+        'max_posts' => (int) env('META_MAX_POSTS', 36),
         'media_hosts' => array_values(array_filter(array_map('trim', explode(',', env('META_MEDIA_HOSTS', 'fbcdn.net,fbsbx.com,cdninstagram.com'))))),
     ],
 

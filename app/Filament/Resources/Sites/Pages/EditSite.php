@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\Sites\Pages;
 
 use App\Filament\Resources\Sites\Concerns\HandlesLogoTools;
+use App\Filament\Resources\Sites\Concerns\HandlesSocialImport;
 use App\Filament\Resources\Sites\Concerns\MarksSitesSent;
 use App\Filament\Resources\Sites\SiteActions;
 use App\Filament\Resources\Sites\SiteResource;
 use App\Filament\Support\AiActions;
 use App\Filament\Widgets\AiRunProgress;
+use App\Jobs\ImportSocialMedia;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
@@ -17,6 +19,7 @@ use Filament\Resources\Pages\EditRecord;
 class EditSite extends EditRecord
 {
     use HandlesLogoTools;
+    use HandlesSocialImport;
     use MarksSitesSent;
 
     protected static string $resource = SiteResource::class;
@@ -50,5 +53,12 @@ class EditSite extends EditRecord
         $data['seo'] = array_filter($data['seo'] ?? [], 'filled') ?: null;
 
         return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        if ($this->record->wasChanged(['source_url', 'source_data'])) {
+            ImportSocialMedia::dispatch($this->record->id);
+        }
     }
 }
