@@ -49,8 +49,16 @@ class EditSite extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $data['logo_nobg_path'] = ($data['logo_nobg_path'] ?? null) ?: ($data['logo_path'] ?? null);
         $data['socials'] = array_filter($data['socials'] ?? []) ?: null;
         $data['seo'] = array_filter($data['seo'] ?? [], 'filled') ?: null;
+
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['logo_nobg_path'] = ($data['logo_nobg_path'] ?? null) ?: ($data['logo_path'] ?? null);
 
         return $data;
     }

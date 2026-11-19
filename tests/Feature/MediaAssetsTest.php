@@ -413,6 +413,22 @@ class MediaAssetsTest extends TestCase
     // ---------------------------------------------------------------- logo tools
 
     #[Test]
+    public function edit_form_uses_the_original_logo_when_the_background_free_logo_is_empty(): void
+    {
+        $this->admin();
+        $this->pngLogo('sites/logos/acme.png');
+        $site = Site::factory()->create([
+            'logo_path' => 'sites/logos/acme.png',
+            'logo_nobg_path' => null,
+        ]);
+
+        $state = Livewire::test(EditSite::class, ['record' => $site->getRouteKey()])
+            ->get('data.logo_nobg_path');
+
+        $this->assertContains('sites/logos/acme.png', array_values($state));
+    }
+
+    #[Test]
     public function edit_page_extracts_the_palette_from_the_logo(): void
     {
         $this->admin();

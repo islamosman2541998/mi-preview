@@ -174,7 +174,7 @@ class SiteForm
                     }),
                 FileUpload::make('logo_nobg_path')
                     ->label('الشعار بدون خلفية')
-                    ->helperText('يظهر في شاشة التحميل. استخدم زر "إزالة الخلفية تلقائيًا" أو ارفعه بأي صيغة صورة.')
+                    ->helperText('يبدأ بنفس الشعار الأصلي ويظهر في شاشة التحميل. استخدم زر "إزالة الخلفية تلقائيًا" لاستبداله بالنسخة الشفافة، أو ارفع صورة أخرى.')
                     ->image()
                     ->disk('public')->directory('sites/logos')->visibility('public')
                     ->maxSize(2048)

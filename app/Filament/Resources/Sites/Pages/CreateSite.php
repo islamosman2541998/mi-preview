@@ -46,6 +46,7 @@ class CreateSite extends CreateRecord
         $this->generateContent = $this->buildPages && (bool) ($data['ai_generate'] ?? false);
         unset($data['build_pages'], $data['ai_generate']);
 
+        $data['logo_nobg_path'] = ($data['logo_nobg_path'] ?? null) ?: ($data['logo_path'] ?? null);
         $data['socials'] = array_filter($data['socials'] ?? []) ?: null;
 
         return $data;

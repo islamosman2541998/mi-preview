@@ -59,7 +59,9 @@ trait HandlesSocialImport
         $this->data['socials'][$profile['platform']] = $profile['url'];
 
         if ($logo) {
-            $this->data['logo_path'] = [(string) Str::uuid() => $logo];
+            $key = (string) Str::uuid();
+            $this->data['logo_path'] = [$key => $logo];
+            $this->data['logo_nobg_path'] = [$key => $logo];
         }
 
         $warnings = (array) ($profile['warnings'] ?? []);

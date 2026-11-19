@@ -57,7 +57,7 @@ class SocialProfileImportTest extends TestCase
         $this->actingAs($admin);
         Filament::setCurrentPanel('admin');
 
-        Livewire::test(CreateSite::class)
+        $component = Livewire::test(CreateSite::class)
             ->fillForm(['source_url' => 'https://facebook.com/acme.controls'])
             ->call('importSocialProfile')
             ->assertSet('data.company_name_ar', 'Acme Controls')
@@ -67,6 +67,7 @@ class SocialProfileImportTest extends TestCase
             ->assertSet('data.email', 'hello@acme.test')
             ->assertSet('data.socials.facebook', 'https://www.facebook.com/acme.controls');
 
+        $this->assertSame($component->get('data.logo_path'), $component->get('data.logo_nobg_path'));
         Http::assertSent(fn (Request $request) => str_contains($request->url(), '/v27.0/acme.controls')
             && $request->hasHeader('Authorization', 'Bearer meta-token'));
         $this->assertCount(1, Storage::disk('public')->allFiles('sites/logos'));
